@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Deep charcoal/slate dark palette — always-dark, no light mode toggle */
+    --background: 222 20% 8%;
+    --foreground: 213 31% 91%;
+
+    --card: 222 20% 11%;
+    --card-foreground: 213 31% 91%;
+
+    --popover: 222 20% 10%;
+    --popover-foreground: 213 31% 91%;
+
+    --primary: 220 91% 60%;
+    --primary-foreground: 222 20% 8%;
+
+    --secondary: 222 16% 16%;
+    --secondary-foreground: 213 31% 91%;
+
+    --muted: 222 16% 14%;
+    --muted-foreground: 215 16% 55%;
+
+    --accent: 262 80% 64%;
+    --accent-foreground: 213 31% 91%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 213 31% 91%;
+
+    --border: 222 16% 18%;
+    --input: 222 16% 16%;
+    --ring: 220 91% 60%;
+
+    --sidebar: 222 22% 9%;
+    --sidebar-foreground: 213 31% 80%;
+    --sidebar-border: 222 16% 15%;
+    --sidebar-accent: 222 20% 14%;
+
+    --radius: 0.5rem;
+
+    /* Severity tokens */
+    --severity-low: 142 71% 45%;
+    --severity-medium: 38 92% 50%;
+    --severity-high: 25 95% 53%;
+    --severity-critical: 0 72% 51%;
+
+    /* Status tokens */
+    --status-draft: 215 16% 45%;
+    --status-submitted: 220 91% 60%;
+    --status-approved: 142 71% 45%;
+    --status-rejected: 0 72% 51%;
+    --status-printed: 262 80% 64%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-border;
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.25);
+  }
+
+  .glow-accent {
+    box-shadow: 0 0 20px hsl(var(--accent) / 0.2);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
+  }
+
+  .grid-dashboard {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: 56px 1fr;
+    min-height: 100dvh;
+  }
+}
