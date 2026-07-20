@@ -1,8 +1,10 @@
+import { useState } from "react"
 import { NavLink, useNavigate } from "react-router-dom"
-import { LayoutDashboard, FileText, ShieldCheck, Printer, LogOut, ChevronRight } from "lucide-react"
+import { LayoutDashboard, FileText, ShieldCheck, Printer, LogOut, ChevronRight, Zap, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/AuthContext"
+import { api } from "@/lib/api"
 
 const NAV_ITEMS = [
   { to: "/setter",     icon: FileText,      label: "Paper Setter",  roles: ["setter"] },
@@ -25,10 +27,23 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children, pageTitle }: DashboardLayoutProps) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
+  const [simulating, setSimulating] = useState(false)
 
   const handleLogout = () => {
     logout()
     navigate("/login", { replace: true })
+  }
+
+  const handleSimulateLeak = async () => {
+    setSimulating(true)
+    try {
+      await api.admin.simulateLeak()
+      window.dispatchEvent(new Event("examos-sim-leak"))
+    } catch (err) {
+      console.error("Simulation error:", err)
+    } finally {
+      setSimulating(false)
+    }
   }
 
   const visibleNav = NAV_ITEMS.filter(
@@ -94,11 +109,26 @@ export function DashboardLayout({ children, pageTitle }: DashboardLayoutProps) {
           ))}
         </nav>
 
-        <div className="mt-auto px-2">
+        <div className="mt-auto space-y-2 px-2">
+          {/* Pitch Simulation Toggle */}
+          <button
+            id="simulate-leak-btn"
+            onClick={handleSimulateLeak}
+            disabled={simulating}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-destructive/10 border border-destructive/30 text-destructive text-xs font-semibold hover:bg-destructive/20 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {simulating ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Zap className="w-3.5 h-3.5 fill-current animate-bounce" />
+            )}
+            <span>Simulate Security Leak</span>
+          </button>
+
           <div className="rounded-md border border-border bg-muted/20 p-3">
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Phase</p>
-            <p className="text-sm font-bold text-foreground mt-0.5">2</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">Core workflows active</p>
+            <p className="text-sm font-bold text-foreground mt-0.5">4</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Security Intelligence Command</p>
           </div>
         </div>
       </aside>

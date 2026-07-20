@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.router import router as v1_router
 from app.api.v1.papers import router as papers_router
+from app.api.v1.admin import router as admin_router
 from app.core.config import settings
 from app.db.session import engine
 from app.models import Base  # noqa: F401 — side-effect: registers all table metadata
@@ -37,4 +38,6 @@ app.add_middleware(
 
 app.include_router(v1_router, prefix="/api/v1")
 app.include_router(papers_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")
+
 

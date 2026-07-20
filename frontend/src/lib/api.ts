@@ -49,6 +49,30 @@ export interface Paper {
   description: string | null
 }
 
+export interface AlertData {
+  id: number
+  severity: "low" | "medium" | "high" | "critical"
+  message: string
+  paper_id: number | null
+  actor_id: number | null
+  resolved: boolean
+  created_at: string
+}
+
+export interface TimelineData {
+  time: string
+  access_events: number
+  threat_events: number
+}
+
+export interface AdminStats {
+  active_threats: number
+  system_risk_level: number
+  vault_locks: number
+  open_print_queues: number
+  timeline: TimelineData[]
+}
+
 export const api = {
   auth: {
     login: (email: string, password: string) =>
@@ -106,5 +130,18 @@ export const api = {
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
     },
+  },
+
+  admin: {
+    analyzeLogs: () =>
+      request<{ summary: string }>("/admin/analyze-logs", { method: "POST" }),
+    listAlerts: () =>
+      request<AlertData[]>("/alerts", { method: "GET" }),
+    resolveAlert: (alertId: number) =>
+      request<{ id: number; resolved: boolean }>(`/alerts/${alertId}/resolve`, { method: "PATCH" }),
+    getStats: () =>
+      request<AdminStats>("/admin/stats", { method: "GET" }),
+    simulateLeak: () =>
+      request<{ message: string }>("/admin/simulate-leak", { method: "POST" }),
   },
 }
