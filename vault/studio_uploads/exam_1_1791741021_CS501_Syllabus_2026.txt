@@ -1,0 +1,7 @@
+Unit I: Operating System Structures & System Calls
+    Topics: Monolithic vs microkernel architectures, system call lifecycle, process context switching.
+    Learning Outcomes: Understand core kernel primitives.
+
+    Unit II: Concurrency, Deadlocks & Synchronization
+    Topics: Semaphores, Mutex locks, Classic dining philosophers problem, Banker's avoidance algorithm.
+    Learning Outcomes: Analyze race conditions and solve deadlocks.

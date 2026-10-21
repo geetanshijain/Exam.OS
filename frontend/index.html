@@ -1,13 +1,342 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExamOS — Secure Examination Paper Management Platform</title>
+  <meta name="description" content="Institutional examination-paper management platform ensuring secure paper generation, multi-stage approvals, time-locked vaults, and forensic attribution.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body>
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+  <!-- Live Institutional Status Strip -->
+  <aside class="system-status-strip" aria-label="System Heartbeat">
+    <div class="container system-status-inner">
+      <div class="status-indicator">
+        <span class="status-dot" id="system-status-dot" aria-hidden="true"></span>
+        <span id="system-status-indicator">Connecting to Institutional Node...</span>
+      </div>
+      <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
+        Zero-Trust Institutional Defense
+      </div>
+    </div>
+  </aside>
+
+  <!-- Global Header Navigation -->
+  <header class="site-header" role="banner">
+    <div class="container header-content">
+      <a href="index.html" class="brand-logo" aria-label="ExamOS Home">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+        <span>ExamOS</span>
+      </a>
+
+      <nav class="main-nav" id="main-nav" aria-label="Primary Navigation">
+        <a href="index.html" class="nav-link active" aria-current="page">Home</a>
+        <a href="#capabilities" class="nav-link">Features</a>
+        <a href="#how-it-works" class="nav-link">How It Works</a>
+        <a href="#security" class="nav-link">Security</a>
+        <a href="#about" class="nav-link">About</a>
+      </nav>
+
+      <div class="header-actions" id="header-actions">
+        <a href="login.html" class="btn btn-secondary btn-sm" id="btn-login" data-action="login">Login</a>
+        <a href="login.html" class="btn btn-primary btn-sm" id="btn-get-started" data-action="login">Get Started</a>
+      </div>
+
+      <button class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Landmark -->
+  <main id="main-content">
+    <!-- Hero Section -->
+    <section class="hero-section" aria-labelledby="hero-heading">
+      <div class="container">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <h1 id="hero-heading" class="hero-title">
+              Secure AI-Powered<br>Exam Management
+            </h1>
+            <p class="hero-subtitle">
+              From intelligent question paper generation to tamper-proof distribution, ExamOS ensures fair, secure and efficient examinations.
+            </p>
+            <div class="hero-cta">
+              <a href="login.html" class="btn btn-primary btn-lg" data-action="login">Login</a>
+              <button type="button" class="btn btn-outline btn-lg" data-action="learn-more">Learn More</button>
+            </div>
+          </div>
+
+          <div class="hero-visual">
+            <img src="assets/campus.jpg" alt="Institutional academic examination hall building" width="800" height="600" loading="eager">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Core Capabilities Grid (4 Columns Matching Approved Reference) -->
+    <section class="capabilities-section" id="capabilities" aria-labelledby="capabilities-heading">
+      <div class="container">
+        <h2 id="capabilities-heading" class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">System Core Capabilities</h2>
+        <div class="capabilities-grid">
+          <!-- Card 1: AI Question Generation -->
+          <article class="capability-card" role="button" tabindex="0" data-capability="ai-generation" aria-haspopup="dialog" aria-label="Details for AI Question Generation">
+            <div class="capability-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a8 8 0 0 0-8 8c0 3 1.5 5.5 4 6.8V19a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.2c2.5-1.3 4-3.8 4-6.8a8 8 0 0 0-8-8z"/>
+                <path d="M9 22h6"/>
+                <path d="M10 10h4"/>
+                <path d="M12 8v4"/>
+              </svg>
+            </div>
+            <h3 class="capability-title">AI Question Generation</h3>
+            <p class="capability-desc">
+              Curriculum-aligned question synthesis from syllabus inputs with configurable difficulty levels and question schemas.
+            </p>
+          </article>
+
+          <!-- Card 2: End-to-End Security -->
+          <article class="capability-card" role="button" tabindex="0" data-capability="security" aria-haspopup="dialog" aria-label="Details for End-to-End Security">
+            <div class="capability-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <circle cx="12" cy="16" r="1"/>
+              </svg>
+            </div>
+            <h3 class="capability-title">End-to-End Security</h3>
+            <p class="capability-desc">
+              Military-grade AES-256 vault encryption with server-enforced countdown time-locks preventing premature access.
+            </p>
+          </article>
+
+          <!-- Card 3: Controlled Distribution -->
+          <article class="capability-card" role="button" tabindex="0" data-capability="distribution" aria-haspopup="dialog" aria-label="Details for Controlled Distribution">
+            <div class="capability-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+                <path d="M7 21h10"/>
+                <path d="M12 3v18"/>
+                <path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/>
+              </svg>
+            </div>
+            <h3 class="capability-title">Controlled Distribution</h3>
+            <p class="capability-desc">
+              Narrow operational printing windows strictly regulated directly prior to exam start with role-isolated credentials.
+            </p>
+          </article>
+
+          <!-- Card 4: Audit & Monitoring -->
+          <article class="capability-card" role="button" tabindex="0" data-capability="monitoring" aria-haspopup="dialog" aria-label="Details for Audit and Monitoring">
+            <div class="capability-icon-wrap" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+            </div>
+            <h3 class="capability-title">Audit &amp; Monitoring</h3>
+            <p class="capability-desc">
+              Immutable event trails, dynamic diagonal watermarking with recipient IP and timestamps, and honeytoken breach traps.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Public Examination Schedule & Center Verification Search -->
+    <section class="schedule-verification-section" id="schedule-verification" aria-labelledby="verification-heading">
+      <div class="container">
+        <span class="section-tag">Public Registry</span>
+        <h2 id="verification-heading" style="margin-top: 8px;">Approved Examination Schedule &amp; Center Verification</h2>
+        <p style="max-width: 680px; margin-top: 8px;">
+          Verify official examination dates, start times (UTC), and designated examination centers.
+          <em>Notice: In accordance with zero-trust security policy, question paper contents remain cryptographically sealed until scheduled release time.</em>
+        </p>
+
+        <form id="schedule-search-form" class="schedule-search-box" role="search" aria-label="Search approved examination schedules">
+          <label for="schedule-query" class="sr-only" style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">Search Subject or Paper Code</label>
+          <input
+            type="search"
+            id="schedule-query"
+            class="schedule-input"
+            placeholder="Search by subject, department, or paper code (e.g., CS-401, Distributed Systems)"
+            autocomplete="off"
+            required
+            minlength="2"
+          >
+          <button type="submit" class="btn btn-primary" id="schedule-search-btn">
+            Verify Schedule
+          </button>
+        </form>
+
+        <!-- Dynamic State Notice Container -->
+        <div id="schedule-state-box" class="schedule-state-box" style="display: none;" role="status" aria-live="polite"></div>
+
+        <!-- Dynamic Results Grid -->
+        <div id="schedule-results" class="schedule-results-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- Structural Architecture & Verification Notice Section -->
+    <section class="info-section" id="how-it-works" aria-labelledby="architecture-heading">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Institutional Architecture</span>
+          <h2 id="architecture-heading">Engineered for Verifiable Examination Integrity</h2>
+          <p>
+            ExamOS replaces fragmented legacy processes with a unified zero-trust workflow, guaranteeing that question assets remain locked until authorized extraction.
+          </p>
+        </div>
+
+        <div class="three-col-grid" id="security">
+          <div class="info-card">
+            <h3>1. Structured Authoring &amp; Dual Custody</h3>
+            <p>
+              Faculty setters submit structured question sets or syllabus parameters. Access is revoked immediately upon submission, requiring dual approval from Department Heads and Controllers.
+            </p>
+          </div>
+
+          <div class="info-card">
+            <h3>2. Server-Enforced Time Locks</h3>
+            <p>
+              Decryption is locked to server-verified UTC clocks. Even administrative credentials cannot extract decrypted assets before the designated exam release window.
+            </p>
+          </div>
+
+          <div class="info-card">
+            <h3>3. Forensic Attribution &amp; Honeytokens</h3>
+            <p>
+              Legitimate extractions are dynamically watermarked across every page with the operator's IP and timestamp. Unauthorized queries trigger silent decoy payloads and log security alerts.
+            </p>
+          </div>
+        </div>
+
+        <!-- Explicit Camera / Screenshot Limitation Notice -->
+        <div style="margin-top: 36px; padding: 20px 24px; background-color: var(--surface-card); border: 1px solid var(--border-subtle); border-left: 4px solid var(--color-primary); border-radius: var(--radius-sm);">
+          <strong style="color: var(--text-primary); display: block; margin-bottom: 4px;">Security Reality Notice: Physical Camera &amp; Screenshot Limitations</strong>
+          <span style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+            Browser sandbox restrictions cannot reliably prevent external photography or physical camera capture.
+            ExamOS addresses this limitation through server-side release scheduling, expiring session tokens, and forensic watermarking containing candidate roll numbers and timestamps.
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sample Data / Institutional Environment Notice -->
+    <aside class="notice-strip" role="complementary" aria-label="Environment Notice">
+      <div class="container notice-content">
+        <div>
+          <strong>Institutional Governance:</strong> Visual and interface controls enforce client workflows backed by server-side verification.
+        </div>
+        <div class="notice-badge">
+          DEV ENVIRONMENT — SAMPLE DATA EXPLICITLY LABELLED
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Capability Technical Specifications Modal (Accessible Dialog) -->
+  <div class="modal-overlay" id="capability-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <span class="section-tag" id="modal-badge" style="margin-bottom: 4px; display: inline-block;">SPECIFICATION</span>
+          <h2 id="modal-title" style="font-size: 1.25rem; margin: 0;">Capability Overview</h2>
+        </div>
+        <button type="button" class="btn btn-ghost btn-sm" id="modal-close-btn" aria-label="Close dialog">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Dynamic Content Injected via main.js -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" id="modal-done-btn">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Site Footer -->
+  <footer class="site-footer" id="about" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <a href="index.html" class="brand-logo" style="margin-bottom: 12px;">
+            <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+            <span>ExamOS</span>
+          </a>
+          <p style="font-size: 13px; color: var(--text-muted); max-width: 280px; line-height: 1.6;">
+            Institutional examination paper lifecycle management platform designed to eliminate pre-exam leak windows.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Platform</h4>
+          <ul class="footer-links">
+            <li><a href="#capabilities">AI Generation</a></li>
+            <li><a href="#how-it-works">Time-Locked Vault</a></li>
+            <li><a href="#security">Print Station Window</a></li>
+            <li><a href="#capabilities">Audit Intelligence</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Governance</h4>
+          <ul class="footer-links">
+            <li><a href="terms.html">Terms and Conditions</a></li>
+            <li><a href="privacy.html">Privacy Policy</a></li>
+            <li><a href="#security">Security Architecture</a></li>
+            <li><a href="login.html">Access Portal</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Support &amp; Contact</h4>
+          <ul class="footer-links">
+            <li><a href="mailto:security@examos.edu">security@examos.edu</a></li>
+            <li><a href="mailto:support@examos.edu">support@examos.edu</a></li>
+            <li><a href="login.html">Controller Desk</a></li>
+            <li><a href="login.html">Print Officer Station</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          &copy; 2026 ExamOS Platform. Institutional Security Division.
+        </div>
+        <div class="footer-legal-links">
+          <a href="terms.html">Terms</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="#security">Security Policy</a>
+          <a href="mailto:security@examos.edu">Contact</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Vanilla JavaScript -->
+  <script src="js/main.js"></script>
+</body>
 </html>

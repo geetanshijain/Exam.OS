@@ -1,0 +1,2 @@
+Q1. Explain Round Robin scheduling with time quantum considerations. [10 Marks]
+Q2. What is a Semaphore? State its two atomic operations. [2 Marks]

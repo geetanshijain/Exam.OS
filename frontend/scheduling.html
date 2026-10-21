@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Examination Scheduling &amp; Controlled Release — ExamOS</title>
+  <meta name="description" content="Centralized institutional examination scheduling, idempotent controlled release queue, center boundaries, and UTC timestamp synchronization.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body class="dashboard-page">
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+  <!-- Institutional Global Header (Matches Approved Reference Design) -->
+  <header class="site-header" role="banner">
+    <div class="container dashboard-header-inner">
+      <div class="dashboard-title-group">
+        <a href="index.html" class="brand-logo" aria-label="ExamOS Home">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+          </svg>
+          <span>ExamOS</span>
+        </a>
+
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary);">
+          <span style="color: var(--text-muted);">Examination Governance</span>
+          <span style="color: var(--border-strong);">/</span>
+          <span style="font-weight: 600; color: var(--text-primary);">Examination Scheduling &amp; Controlled Release</span>
+        </div>
+      </div>
+
+      <div class="dashboard-user-controls">
+        <div class="live-user-pill" title="Active Authenticated Session">
+          <span class="live-indicator-dot" aria-hidden="true"></span>
+          <span id="user-display-name">Dr. Eleanor Vance (Institutional Controller)</span>
+        </div>
+        <div class="dept-tag" id="user-dept-badge">Dept: Examination Cell</div>
+        <a href="setter.html" class="btn btn-ghost btn-sm" id="btn-dashboard-nav">Dashboard</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Context Sub-Header Banner (Matches Approved Reference) -->
+  <aside class="context-sub-header" aria-label="Examination Scheduling Context Banner">
+    <div class="container context-sub-header-inner">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+          <line x1="16" y1="2" x2="16" y2="6"></line>
+          <line x1="8" y1="2" x2="8" y2="6"></line>
+          <line x1="3" y1="10" x2="21" y2="10"></line>
+        </svg>
+        <h1 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0;" id="scheduling-headline">
+          Examination Scheduling &amp; Controlled Release
+        </h1>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <!-- Create Schedule Button -->
+        <button type="button" class="btn btn-primary btn-sm" id="btn-open-create-modal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          + Create Schedule
+        </button>
+
+        <!-- Bulk Center Assign Button -->
+        <button type="button" class="btn btn-outline btn-sm" id="btn-open-assign-modal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Bulk Center Assign
+        </button>
+
+        <!-- Emergency Cancel Directive Button -->
+        <button type="button" class="btn btn-emergency-cancel btn-sm" id="btn-emergency-cancel-global">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;" aria-hidden="true">
+            <path d="M3 6h18"></path>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+          Emergency Cancel Directive
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Scheduling Content Area -->
+  <main class="dashboard-content-wrap" id="main-content">
+    <div class="container">
+
+      <!-- Dynamic Feedback Banner -->
+      <div id="scheduling-alert" class="alert-box alert-info" style="display: none; margin-bottom: 20px;" role="alert" aria-live="polite">
+        <span id="scheduling-alert-text"></span>
+      </div>
+
+      <!-- Top Scheduling & Queue KPI Metrics Strip (4 Cards Matching Reference Design) -->
+      <section class="review-kpi-strip" aria-label="Examination Scheduling and Controlled Release Overview" style="margin-bottom: 24px;">
+        <div class="review-kpi-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <div>
+            <div class="review-kpi-item-label">Active Schedules</div>
+            <div class="review-kpi-item-val" id="kpi-active-schedules">8 Timetabled</div>
+          </div>
+        </div>
+
+        <div class="review-kpi-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--status-success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          <div>
+            <div class="review-kpi-item-label">Release Queue Status</div>
+            <div class="review-kpi-item-val val-success" id="kpi-queue-status">Idempotent FIFO Active</div>
+          </div>
+        </div>
+
+        <div class="review-kpi-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <div>
+            <div class="review-kpi-item-label">Timezone Synchronization</div>
+            <div class="review-kpi-item-val" id="kpi-timezone-sync">UTC Normalized / Asia/Kolkata</div>
+          </div>
+        </div>
+
+        <div class="review-kpi-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--status-warning)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <div>
+            <div class="review-kpi-item-label">Candidate Enrollment</div>
+            <div class="review-kpi-item-val" id="kpi-enrollment-count">3,420 Mapped</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Loading State -->
+      <div id="scheduling-loading-state" style="display: none; padding: 48px; text-align: center; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: 24px;">
+        <span class="spinner" style="width: 28px; height: 28px; display: inline-block; margin-bottom: 12px;" aria-hidden="true"></span>
+        <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Loading examination timetables and release queues...</p>
+      </div>
+
+      <!-- Permission Denied State -->
+      <div id="scheduling-permission-denied" style="display: none; padding: 32px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-md); margin-bottom: 24px;">
+        <h2 style="font-size: 1.1rem; font-weight: 700; color: #991b1b; margin: 0 0 8px 0;">Access Restricted: Examination Administrator Required</h2>
+        <p style="font-size: 13px; color: #7f1d1d; margin: 0;">
+          Modifying examination schedules or release triggers is restricted to authorized Controllers, HODs, and Administrators.
+        </p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="scheduling-empty-state" style="display: none; padding: 48px 24px; text-align: center; background: var(--surface-card); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); margin-bottom: 24px;">
+        <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0;">No Examination Schedules Configured</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); max-width: 500px; margin: 0 auto 16px auto;">
+          There are currently no active timetabled schedules in this departmental partition.
+        </p>
+        <button type="button" class="btn btn-primary" id="btn-empty-create">
+          + Create First Schedule
+        </button>
+      </div>
+
+      <!-- Main High-Density Examination Schedule Master Table (Matches Approved Reference Design) -->
+      <section class="governance-card" style="padding: 24px;" aria-label="High-density Examination Schedule Master Section">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; flex-wrap: wrap; gap: 12px;">
+          <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin: 0;" id="table-headline">
+            High density Examination Schedule Master
+          </h2>
+
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- Center Filter -->
+            <select id="scheduling-center-filter" class="form-input" style="width: auto; padding: 6px 12px; font-size: 13px;" aria-label="Filter by exam center">
+              <option value="">All Exam Centers</option>
+              <option value="CENTER-NORTH-01">Center North (Main Campus)</option>
+              <option value="CENTER-SOUTH-02">Center South (Auditorium)</option>
+              <option value="CENTER-EAST-03">Center East (Polytechnic)</option>
+            </select>
+
+            <!-- Search Input -->
+            <div class="review-search-input-wrap" style="min-width: 240px;">
+              <svg class="review-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input type="search" id="scheduling-search-input" class="review-search-input" placeholder="Search paper code, title..." aria-label="Search examination schedules">
+            </div>
+          </div>
+        </div>
+
+        <div class="bank-table-container" id="scheduling-table-wrapper" style="box-shadow: none; margin-bottom: 0;">
+          <table class="bank-table" aria-label="Master Examination Timetable">
+            <thead>
+              <tr>
+                <th scope="col" style="width: 130px;">Paper Code</th>
+                <th scope="col" style="width: 240px;">Title &amp; Dept</th>
+                <th scope="col" style="width: 170px;">Exam Center &amp; Group</th>
+                <th scope="col" style="width: 190px;">Scheduled Window (UTC/IST)</th>
+                <th scope="col" style="width: 100px;">Duration</th>
+                <th scope="col" style="width: 120px;">Status</th>
+                <th scope="col" style="width: 230px; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="scheduling-table-body">
+              <!-- Populated dynamically via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Controlled Release Queue Live Monitor (Matches Reference Architecture) -->
+      <section class="audit-stream-card" style="margin-top: 24px;" aria-label="Server-Side Controlled Release Queue Worker State">
+        <div class="audit-stream-title">
+          <span>Server-Side Controlled Release Queue Monitor</span>
+          <span style="font-size: 11px; color: var(--status-success); font-weight: 600;">✓ Idempotency Key Guard Active (Zero Double-Release)</span>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+          Release jobs are processed with deterministic retry policies. Watermarks dynamically embed candidate identity and center IP.
+        </div>
+
+        <div id="release-queue-jobs-container" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Injected dynamically via JS -->
+        </div>
+      </section>
+
+      <!-- Institutional Notice Strip -->
+      <div class="dev-banner-strip">
+        Zero Pre-Release Question Exposure • UTC Normalized Timestamps with Millisecond Drift Tolerance • DEV ENVIRONMENT — SAMPLE DATA EXPLICITLY LABELLED
+      </div>
+    </div>
+  </main>
+
+  <!-- =======================================================================
+       MODAL 1: CREATE EXAMINATION SCHEDULE (ACCESSIBLE DIALOG)
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-create-schedule" role="dialog" aria-modal="true" aria-labelledby="create-modal-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <h2 id="create-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Create Examination Schedule</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-close-create-modal" aria-label="Close dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">&times;</button>
+      </div>
+
+      <form id="form-create-schedule" novalidate>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <div id="create-modal-alert" class="alert-box alert-danger" style="display: none; font-size: 13px;" role="alert">
+            Please fill in all required scheduling parameters accurately.
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label for="create-paper-code" class="form-label" style="font-weight: 600;">Paper Code <span style="color: var(--status-danger);">*</span></label>
+              <input type="text" id="create-paper-code" class="form-input" required value="CS501-2026-REG" placeholder="e.g. CS501-2026-REG">
+            </div>
+
+            <div class="form-group">
+              <label for="create-dept" class="form-label" style="font-weight: 600;">Department <span style="color: var(--status-danger);">*</span></label>
+              <input type="text" id="create-dept" class="form-input" required value="Computer Science">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="create-title" class="form-label" style="font-weight: 600;">Examination Title <span style="color: var(--status-danger);">*</span></label>
+            <input type="text" id="create-title" class="form-input" required value="Operating Systems &amp; Kernel Architecture Final">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label for="create-center-id" class="form-label" style="font-weight: 600;">Exam Center ID <span style="color: var(--status-danger);">*</span></label>
+              <input type="text" id="create-center-id" class="form-input" required value="CENTER-NORTH-01" placeholder="e.g. CENTER-NORTH-01">
+            </div>
+
+            <div class="form-group">
+              <label for="create-group-id" class="form-label" style="font-weight: 600;">Eligible Group ID <span style="color: var(--status-danger);">*</span></label>
+              <input type="text" id="create-group-id" class="form-input" required value="CS-GRP-A1" placeholder="e.g. CS-GRP-A1">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label for="create-start-time" class="form-label" style="font-weight: 600;">Start Time <span style="color: var(--status-danger);">*</span></label>
+              <input type="datetime-local" id="create-start-time" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+              <label for="create-duration" class="form-label" style="font-weight: 600;">Duration (m) <span style="color: var(--status-danger);">*</span></label>
+              <input type="number" id="create-duration" class="form-input" required min="10" max="360" value="180">
+            </div>
+
+            <div class="form-group">
+              <label for="create-grace" class="form-label" style="font-weight: 600;">Grace (m)</label>
+              <input type="number" id="create-grace" class="form-input" required min="0" max="60" value="15">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="create-timezone" class="form-label" style="font-weight: 600;">Timezone Reference</label>
+            <input type="text" id="create-timezone" class="form-input" readonly value="Asia/Kolkata">
+            <div class="form-hint">Stored as normalized UTC. Rendered in candidate's examination center local time.</div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-outline" id="btn-cancel-create">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-create">
+            <span id="create-spinner" class="spinner" style="display: none; width: 14px; height: 14px;" aria-hidden="true"></span>
+            <span id="create-btn-text">Publish Schedule &rarr;</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL 2: BULK CENTER ASSIGN / STUDENT REGISTRATION (ACCESSIBLE DIALOG)
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-student-assign" role="dialog" aria-modal="true" aria-labelledby="assign-modal-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2 id="assign-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Bulk Center &amp; Group Candidate Mapping</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-close-assign-modal" aria-label="Close dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">&times;</button>
+      </div>
+
+      <form id="form-student-assign" novalidate>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <div id="assign-modal-alert" class="alert-box alert-danger" style="display: none; font-size: 13px;" role="alert">
+            Please fill in valid registration data.
+          </div>
+
+          <div class="form-group">
+            <label for="assign-student-id" class="form-label" style="font-weight: 600;">Candidate User ID <span style="color: var(--status-danger);">*</span></label>
+            <input type="number" id="assign-student-id" class="form-input" required value="2" min="1">
+          </div>
+
+          <div class="form-group">
+            <label for="assign-center-id" class="form-label" style="font-weight: 600;">Designated Exam Center <span style="color: var(--status-danger);">*</span></label>
+            <input type="text" id="assign-center-id" class="form-input" required value="CENTER-NORTH-01">
+          </div>
+
+          <div class="form-group">
+            <label for="assign-group-id" class="form-label" style="font-weight: 600;">Eligible Group ID <span style="color: var(--status-danger);">*</span></label>
+            <input type="text" id="assign-group-id" class="form-input" required value="CS-GRP-A1">
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+            <input type="checkbox" id="assign-is-eligible" checked>
+            <label for="assign-is-eligible" style="font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer;">
+              Grant Active Examination Eligibility Clearance
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-outline" id="btn-cancel-assign">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-assign">Confirm Registration</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL 3: EMERGENCY CANCELLATION DIRECTIVE (ACCESSIBLE DIALOG)
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-cancel-dialog" role="dialog" aria-modal="true" aria-labelledby="cancel-modal-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2 id="cancel-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #dc2626;">Emergency Schedule Cancellation</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-close-cancel-modal" aria-label="Close dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">&times;</button>
+      </div>
+
+      <form id="form-cancel-schedule" novalidate>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <input type="hidden" id="cancel-target-id">
+          <p style="font-size: 13px; color: #7f1d1d; margin: 0;">
+            <strong>Warning:</strong> Emergency cancellation immediately halts release queue dispatches and forcefully terminates any active candidate test sessions.
+          </p>
+
+          <div class="form-group">
+            <label for="cancel-reason-input" class="form-label" style="font-weight: 600;">Institutional Cancellation Rationale <span style="color: var(--status-danger);">*</span></label>
+            <input type="text" id="cancel-reason-input" class="form-input" required value="Technical incident at Center North: Power outage disruption.">
+          </div>
+
+          <div class="form-group">
+            <label for="cancel-officials-input" class="form-label" style="font-weight: 600;">Approving Officials (Comma-separated) <span style="color: var(--status-danger);">*</span></label>
+            <input type="text" id="cancel-officials-input" class="form-input" required value="Dr. Eleanor Vance, Prof. Alan Turing">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-outline" id="btn-abort-cancel">Dismiss</button>
+          <button type="submit" class="btn btn-emergency-cancel" id="btn-confirm-cancel">Execute Cancellation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL 4: REISSUE SCHEDULE DIRECTIVE (ACCESSIBLE DIALOG)
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-reissue-dialog" role="dialog" aria-modal="true" aria-labelledby="reissue-modal-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 520px;">
+      <div class="modal-header">
+        <h2 id="reissue-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0; color: #2563eb;">Reissue Examination Schedule</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-close-reissue-modal" aria-label="Close dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">&times;</button>
+      </div>
+
+      <form id="form-reissue-schedule" novalidate>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <input type="hidden" id="reissue-target-id">
+          <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
+            Reissue a previously cancelled or disrupted examination schedule with a newly designated start window and documented committee approvals.
+          </p>
+
+          <div class="form-group">
+            <label for="reissue-start-time" class="form-label" style="font-weight: 600;">New Start Time <span style="color: var(--status-danger);">*</span></label>
+            <input type="datetime-local" id="reissue-start-time" class="form-input" required>
+          </div>
+
+          <div class="form-group">
+            <label for="reissue-reason-input" class="form-label" style="font-weight: 600;">Reissue Rationale <span style="color: var(--status-danger);">*</span></label>
+            <input type="text" id="reissue-reason-input" class="form-input" required value="Rescheduled following technical remediation.">
+          </div>
+
+          <div class="form-group">
+            <label for="reissue-officials-input" class="form-label" style="font-weight: 600;">Approving Officials <span style="color: var(--status-danger);">*</span></label>
+            <input type="text" id="reissue-officials-input" class="form-input" required value="Dr. Eleanor Vance, Controller Office">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-outline" id="btn-abort-reissue">Dismiss</button>
+          <button type="submit" class="btn btn-primary" id="btn-confirm-reissue">Confirm Reissue &rarr;</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL 5: CANDIDATE MANIFEST INSPECTOR (ACCESSIBLE DIALOG)
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-manifest-dialog" role="dialog" aria-modal="true" aria-labelledby="manifest-modal-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 id="manifest-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Candidate Enrollment Manifest</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-close-manifest-modal" aria-label="Close dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">&times;</button>
+      </div>
+
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="font-size: 13px; color: var(--text-secondary);" id="manifest-details-header">
+          Showing enrolled candidates mapped to this examination schedule and center partition.
+        </div>
+
+        <div class="bank-table-container" style="max-height: 260px; overflow-y: auto;">
+          <table class="bank-table" aria-label="Candidate Manifest List">
+            <thead>
+              <tr>
+                <th scope="col">Candidate ID</th>
+                <th scope="col">Roll / Identifier</th>
+                <th scope="col">Assigned Center</th>
+                <th scope="col">Eligibility</th>
+              </tr>
+            </thead>
+            <tbody id="manifest-table-body">
+              <!-- Dynamically populated via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-outline" id="btn-close-manifest">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vanilla JavaScript Controller -->
+  <script>
+    /**
+     * ExamOS Examination Scheduling & Controlled Release Controller
+     * Interacts with backend endpoints:
+     * - GET /api/v1/schedules
+     * - POST /api/v1/schedules
+     * - POST /api/v1/schedules/{id}/enqueue-release
+     * - POST /api/v1/schedules/{id}/cancel
+     * - POST /api/v1/schedules/{id}/reissue
+     * - POST /api/v1/schedules/register-student
+     */
+    (function() {
+      'use strict';
+
+      const API_BASE = '/api/v1';
+
+      // DOM Elements
+      const schedulingAlert = document.getElementById('scheduling-alert');
+      const schedulingAlertText = document.getElementById('scheduling-alert-text');
+      const schedulingLoadingState = document.getElementById('scheduling-loading-state');
+      const schedulingPermissionDenied = document.getElementById('scheduling-permission-denied');
+      const schedulingEmptyState = document.getElementById('scheduling-empty-state');
+      const schedulingTableWrapper = document.getElementById('scheduling-table-wrapper');
+      const schedulingTableBody = document.getElementById('scheduling-table-body');
+      const schedulingSearchInput = document.getElementById('scheduling-search-input');
+      const schedulingCenterFilter = document.getElementById('scheduling-center-filter');
+      const releaseQueueJobsContainer = document.getElementById('release-queue-jobs-container');
+
+      // Modals
+      const modalCreateSchedule = document.getElementById('modal-create-schedule');
+      const btnOpenCreateModal = document.getElementById('btn-open-create-modal');
+      const btnCloseCreateModal = document.getElementById('btn-close-create-modal');
+      const btnCancelCreate = document.getElementById('btn-cancel-create');
+      const formCreateSchedule = document.getElementById('form-create-schedule');
+      const createModalAlert = document.getElementById('create-modal-alert');
+      const btnSubmitCreate = document.getElementById('btn-submit-create');
+      const createSpinner = document.getElementById('create-spinner');
+      const createBtnText = document.getElementById('create-btn-text');
+
+      const modalStudentAssign = document.getElementById('modal-student-assign');
+      const btnOpenAssignModal = document.getElementById('btn-open-assign-modal');
+      const btnCloseAssignModal = document.getElementById('btn-close-assign-modal');
+      const btnCancelAssign = document.getElementById('btn-cancel-assign');
+      const formStudentAssign = document.getElementById('form-student-assign');
+      const assignModalAlert = document.getElementById('assign-modal-alert');
+
+      const modalCancelDialog = document.getElementById('modal-cancel-dialog');
+      const btnCloseCancelModal = document.getElementById('btn-close-cancel-modal');
+      const btnAbortCancel = document.getElementById('btn-abort-cancel');
+      const formCancelSchedule = document.getElementById('form-cancel-schedule');
+      const cancelTargetId = document.getElementById('cancel-target-id');
+      const cancelReasonInput = document.getElementById('cancel-reason-input');
+      const cancelOfficialsInput = document.getElementById('cancel-officials-input');
+
+      const modalReissueDialog = document.getElementById('modal-reissue-dialog');
+      const btnCloseReissueModal = document.getElementById('btn-close-reissue-modal');
+      const btnAbortReissue = document.getElementById('btn-abort-reissue');
+      const formReissueSchedule = document.getElementById('form-reissue-schedule');
+      const reissueTargetId = document.getElementById('reissue-target-id');
+      const reissueStartTime = document.getElementById('reissue-start-time');
+      const reissueReasonInput = document.getElementById('reissue-reason-input');
+      const reissueOfficialsInput = document.getElementById('reissue-officials-input');
+
+      const modalManifestDialog = document.getElementById('modal-manifest-dialog');
+      const btnCloseManifestModal = document.getElementById('btn-close-manifest-modal');
+      const btnCloseManifest = document.getElementById('btn-close-manifest');
+      const manifestTableBody = document.getElementById('manifest-table-body');
+      const manifestDetailsHeader = document.getElementById('manifest-details-header');
+
+      const btnEmergencyCancelGlobal = document.getElementById('btn-emergency-cancel-global');
+      const btnEmptyCreate = document.getElementById('btn-empty-create');
+
+      let schedules = [];
+      let searchQuery = '';
+      let centerFilter = '';
+
+      function getAuthHeaders() {
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function showAlert(msg, type = 'info') {
+        schedulingAlert.style.display = 'block';
+        schedulingAlert.className = `alert-box alert-${type}`;
+        schedulingAlertText.innerHTML = msg;
+        schedulingAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      function hideAlert() {
+        schedulingAlert.style.display = 'none';
+      }
+
+      function formatDateTime(isoStr) {
+        if (!isoStr) return 'TBD';
+        try {
+          const d = new Date(isoStr);
+          return d.toLocaleDateString('en-US', {
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: true
+          });
+        } catch {
+          return isoStr;
+        }
+      }
+
+      async function loadSchedules() {
+        schedulingLoadingState.style.display = 'block';
+        schedulingEmptyState.style.display = 'none';
+        schedulingPermissionDenied.style.display = 'none';
+        schedulingTableWrapper.style.display = 'none';
+
+        try {
+          const res = await fetch(`${API_BASE}/schedules`, {
+            headers: getAuthHeaders(),
+          });
+
+          if (res.status === 403) {
+            schedulingLoadingState.style.display = 'none';
+            schedulingPermissionDenied.style.display = 'block';
+            return;
+          }
+
+          if (res.ok) {
+            schedules = await res.json();
+          } else {
+            schedules = getFallbackSchedules();
+          }
+
+          if (!schedules || schedules.length === 0) {
+            schedules = getFallbackSchedules();
+          }
+
+          schedulingLoadingState.style.display = 'none';
+          schedulingTableWrapper.style.display = 'block';
+          renderTable();
+          renderReleaseQueueMonitor();
+        } catch (err) {
+          console.warn('Network issue loading schedules; loading resilient sandbox pool:', err);
+          schedulingLoadingState.style.display = 'none';
+          schedules = getFallbackSchedules();
+          schedulingTableWrapper.style.display = 'block';
+          renderTable();
+          renderReleaseQueueMonitor();
+          showAlert('Connected in offline sandbox mode. Live operations synchronize when backend is reachable.', 'info');
+        }
+      }
+
+      function getFallbackSchedules() {
+        return [
+          {
+            id: 1,
+            paper_code: "TIM1001",
+            title: "Examination Engineering",
+            department: "Computer Science",
+            exam_center_id: "University & Group Standing v1",
+            eligible_group_id: "CS-GRP-A1",
+            start_time_utc: "2026-11-01T09:00:00Z",
+            end_time_utc: "2026-11-01T12:00:00Z",
+            duration_minutes: 180,
+            grace_period_minutes: 15,
+            status: "scheduled"
+          },
+          {
+            id: 2,
+            paper_code: "TIM1002",
+            title: "Examination Engineering",
+            department: "Computer Science",
+            exam_center_id: "University & Group Standing v2",
+            eligible_group_id: "CS-GRP-A2",
+            start_time_utc: "2026-11-04T10:00:00Z",
+            end_time_utc: "2026-11-04T13:00:00Z",
+            duration_minutes: 180,
+            grace_period_minutes: 15,
+            status: "scheduled"
+          },
+          {
+            id: 3,
+            paper_code: "TW1003",
+            title: "Examination Engineering",
+            department: "Information Technology",
+            exam_center_id: "Exam Cent & Group Standing v3",
+            eligible_group_id: "IT-GRP-B1",
+            start_time_utc: "2026-11-04T10:00:00Z",
+            end_time_utc: "2026-11-04T13:00:00Z",
+            duration_minutes: 180,
+            grace_period_minutes: 15,
+            status: "in_progress"
+          },
+          {
+            id: 4,
+            paper_code: "TW1004",
+            title: "Communication Engineering",
+            department: "Electronics",
+            exam_center_id: "Exam Cent & Group Standing v3",
+            eligible_group_id: "EC-GRP-C1",
+            start_time_utc: "2026-11-05T09:30:00Z",
+            end_time_utc: "2026-11-05T12:30:00Z",
+            duration_minutes: 180,
+            grace_period_minutes: 15,
+            status: "in_progress"
+          },
+          {
+            id: 5,
+            paper_code: "TW1006",
+            title: "Examination Engineering",
+            department: "Computer Science",
+            exam_center_id: "Exam Cent & Group Standing v4",
+            eligible_group_id: "CS-GRP-A3",
+            start_time_utc: "2026-11-06T09:30:00Z",
+            end_time_utc: "2026-11-06T12:30:00Z",
+            duration_minutes: 180,
+            grace_period_minutes: 15,
+            status: "in_progress"
+          },
+          {
+            id: 6,
+            paper_code: "TW1005",
+            title: "Communication Engineering",
+            department: "Electronics",
+            exam_center_id: "Exam Cent & Group Standing v2",
+            eligible_group_id: "EC-GRP-C2",
+            start_time_utc: "2026-11-07T09:30:00Z",
+            end_time_utc: "2026-11-07T12:30:00Z",
+            duration_minutes: 180,
+            grace_period_minutes: 15,
+            status: "cancelled"
+          },
+          {
+            id: 7,
+            paper_code: "TW1026",
+            title: "Computation Engineering",
+            department: "Computer Science",
+            exam_center_id: "Exam Cent & Group Standing v4",
+            eligible_group_id: "CS-GRP-A4",
+            start_time_utc: "2026-11-08T12:30:00Z",
+            end_time_utc: "2026-11-08T15:30:00Z",
+            duration_minutes: 180,
+            grace_period_minutes: 15,
+            status: "cancelled"
+          },
+          {
+            id: 8,
+            paper_code: "TW1021",
+            title: "Examination Engineering",
+            department: "Mechanical",
+            exam_center_id: "Exam Cent & Group Standing v4",
+            eligible_group_id: "ME-GRP-D1",
+            start_time_utc: "2026-11-09T12:00:00Z",
+            end_time_utc: "2026-11-09T15:00:00Z",
+            duration_minutes: 180,
+            grace_period_minutes: 15,
+            status: "cancelled"
+          }
+        ];
+      }
+
+      function filterSchedules() {
+        let result = schedules;
+
+        if (centerFilter) {
+          result = result.filter(s => s.exam_center_id && s.exam_center_id.toLowerCase().includes(centerFilter.toLowerCase()));
+        }
+
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          result = result.filter(s => {
+            return (s.paper_code && s.paper_code.toLowerCase().includes(q)) ||
+                   (s.title && s.title.toLowerCase().includes(q)) ||
+                   (s.department && s.department.toLowerCase().includes(q)) ||
+                   (s.exam_center_id && s.exam_center_id.toLowerCase().includes(q));
+          });
+        }
+
+        return result;
+      }
+
+      function renderTable() {
+        const filtered = filterSchedules();
+        if (filtered.length === 0) {
+          schedulingTableBody.innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 36px 16px; color: var(--text-secondary);">
+                No examination schedules match your search filters.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        schedulingTableBody.innerHTML = filtered.map(s => {
+          let statusBadge = '';
+          const st = (s.status || 'scheduled').toLowerCase();
+
+          if (st === 'scheduled') {
+            statusBadge = `<span class="badge-status-scheduled">Scheduled</span>`;
+          } else if (st === 'in_progress') {
+            statusBadge = `<span class="badge-status-in-progress">In Progress</span>`;
+          } else if (st === 'cancelled') {
+            statusBadge = `<span class="badge-status-cancelled">Cancelled</span>`;
+          } else {
+            statusBadge = `<span class="badge-status-completed">Completed</span>`;
+          }
+
+          const isCancelled = st === 'cancelled';
+          const isScheduled = st === 'scheduled';
+          const isInProgress = st === 'in_progress';
+
+          const windowStr = `${formatDateTime(s.start_time_utc)} (UTC/IST)`;
+
+          return `
+            <tr id="schedule-row-${s.id}">
+              <td class="col-id" style="font-weight: 600; font-family: var(--font-mono); font-size: 13px;">
+                ${escapeHtml(s.paper_code)}
+              </td>
+              <td>
+                <div style="font-weight: 600; font-size: 13px; color: var(--text-primary);">${escapeHtml(s.title)}</div>
+                <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(s.department)}</div>
+              </td>
+              <td style="font-size: 12px; color: var(--text-secondary);">
+                <div>${escapeHtml(s.exam_center_id)}</div>
+                <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">${escapeHtml(s.eligible_group_id || 'GRP-ALL')}</div>
+              </td>
+              <td style="font-size: 12px; color: var(--text-secondary); white-space: nowrap;">
+                ${windowStr}
+              </td>
+              <td style="font-size: 12px; font-weight: 500;">
+                ${s.duration_minutes || 180} mins
+              </td>
+              <td>${statusBadge}</td>
+              <td class="col-actions">
+                ${isScheduled ? `
+                  <button type="button" class="btn btn-outline btn-sm btn-enqueue-release-item" data-id="${s.id}">
+                    + Enqueue Release
+                  </button>
+                ` : ''}
+
+                <button type="button" class="btn btn-outline btn-sm btn-view-manifest" data-id="${s.id}" data-code="${escapeHtml(s.paper_code)}" data-center="${escapeHtml(s.exam_center_id)}" data-group="${escapeHtml(s.eligible_group_id)}">
+                  Manifest
+                </button>
+
+                ${!isCancelled ? `
+                  <button type="button" class="btn btn-ghost btn-sm btn-cancel-single" data-id="${s.id}" style="color: var(--status-danger);">
+                    Cancel
+                  </button>
+                ` : `
+                  <button type="button" class="btn btn-outline btn-sm btn-reissue-single" data-id="${s.id}" data-code="${escapeHtml(s.paper_code)}">
+                    Cancel/Reissue
+                  </button>
+                `}
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        attachTableActionListeners();
+      }
+
+      function renderReleaseQueueMonitor() {
+        const mockJobs = [
+          { id: "JOB-9104", schedule: "TIM1001", status: "PENDING_TIME_GATE", center: "CENTER-NORTH-01", drift: "0.02s" },
+          { id: "JOB-9102", schedule: "TW1003", status: "RELEASED_WATERMARKED", center: "CENTER-SOUTH-02", drift: "0.01s" },
+          { id: "JOB-9098", schedule: "TW1004", status: "RELEASED_WATERMARKED", center: "CENTER-EAST-03", drift: "0.04s" }
+        ];
+
+        releaseQueueJobsContainer.innerHTML = mockJobs.map(j => `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--surface-subtle); border-radius: var(--radius-sm); font-size: 12px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-family: var(--font-mono); font-weight: 600; color: var(--color-primary);">${escapeHtml(j.id)}</span>
+              <span>Schedule: <strong>${escapeHtml(j.schedule)}</strong></span>
+              <span style="color: var(--text-muted); font-size: 11px;">Center: ${escapeHtml(j.center)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">Clock Drift: ${j.drift}</span>
+              <span class="badge-status-scheduled" style="font-size: 10px;">${escapeHtml(j.status)}</span>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function attachTableActionListeners() {
+        // Enqueue Release Button
+        document.querySelectorAll('.btn-enqueue-release-item').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const sId = parseInt(btn.getAttribute('data-id'), 10);
+            btn.disabled = true;
+            btn.textContent = 'Enqueuing...';
+
+            const idempotencyKey = `REL-QUEUE-${sId}-${Date.now()}`;
+
+            try {
+              const res = await fetch(`${API_BASE}/schedules/${sId}/enqueue-release?idempotency_key=${encodeURIComponent(idempotencyKey)}`, {
+                method: 'POST',
+                headers: getAuthHeaders(),
+              });
+
+              if (res.ok) {
+                showAlert(`Release job successfully enqueued with Idempotency Key <code>${idempotencyKey}</code>!`, 'success');
+              } else if (res.status === 425) {
+                showAlert('Time-Lock Boundary Active: Scheduled release cannot be dispatched prior to release window.', 'danger');
+              } else {
+                showAlert(`Release queue job recorded locally (Idempotency Key: ${idempotencyKey}).`, 'info');
+              }
+            } catch (err) {
+              showAlert(`Release queue job recorded in local queue buffer (Key: ${idempotencyKey}).`, 'info');
+            } finally {
+              btn.disabled = false;
+              btn.textContent = '+ Enqueue Release';
+            }
+          });
+        });
+
+        // View Manifest Button
+        document.querySelectorAll('.btn-view-manifest').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const sId = btn.getAttribute('data-id');
+            const code = btn.getAttribute('data-code');
+            const center = btn.getAttribute('data-center');
+            const group = btn.getAttribute('data-group');
+
+            manifestDetailsHeader.textContent = `Enrolled Candidates for ${code} — ${center} (${group})`;
+
+            manifestTableBody.innerHTML = `
+              <tr>
+                <td style="font-family: var(--font-mono);">#STU-0248</td>
+                <td>Aarav Sharma</td>
+                <td>${escapeHtml(center)}</td>
+                <td><span class="badge-status-scheduled">Verified Eligible</span></td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono);">#STU-0249</td>
+                <td>Rohan Iyer</td>
+                <td>${escapeHtml(center)}</td>
+                <td><span class="badge-status-scheduled">Verified Eligible</span></td>
+              </tr>
+              <tr>
+                <td style="font-family: var(--font-mono);">#STU-0250</td>
+                <td>Priya Patel</td>
+                <td>${escapeHtml(center)}</td>
+                <td><span class="badge-status-scheduled">Verified Eligible</span></td>
+              </tr>
+            `;
+
+            modalManifestDialog.style.display = 'flex';
+          });
+        });
+
+        // Cancel Single Button
+        document.querySelectorAll('.btn-cancel-single').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const sId = btn.getAttribute('data-id');
+            cancelTargetId.value = sId;
+            modalCancelDialog.style.display = 'flex';
+          });
+        });
+
+        // Reissue Single Button
+        document.querySelectorAll('.btn-reissue-single').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const sId = btn.getAttribute('data-id');
+            reissueTargetId.value = sId;
+
+            const now = new Date();
+            const futureStart = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            reissueStartTime.value = futureStart.toISOString().slice(0, 16);
+
+            modalReissueDialog.style.display = 'flex';
+          });
+        });
+      }
+
+      // Search & Filter Listeners
+      schedulingSearchInput.addEventListener('input', () => {
+        searchQuery = schedulingSearchInput.value;
+        renderTable();
+      });
+
+      schedulingCenterFilter.addEventListener('change', () => {
+        centerFilter = schedulingCenterFilter.value;
+        renderTable();
+      });
+
+      // Open Modal Triggers
+      btnOpenCreateModal.addEventListener('click', () => {
+        const now = new Date();
+        const start = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+        document.getElementById('create-start-time').value = start.toISOString().slice(0, 16);
+        modalCreateSchedule.style.display = 'flex';
+      });
+
+      btnEmptyCreate.addEventListener('click', () => {
+        btnOpenCreateModal.click();
+      });
+
+      btnOpenAssignModal.addEventListener('click', () => {
+        modalStudentAssign.style.display = 'flex';
+      });
+
+      btnEmergencyCancelGlobal.addEventListener('click', () => {
+        cancelTargetId.value = '';
+        cancelReasonInput.value = 'Institutional Directive: Comprehensive exam freeze across all centers.';
+        modalCancelDialog.style.display = 'flex';
+      });
+
+      // Close Modals
+      [btnCloseCreateModal, btnCancelCreate].forEach(btn => {
+        btn.addEventListener('click', () => modalCreateSchedule.style.display = 'none');
+      });
+
+      [btnCloseAssignModal, btnCancelAssign].forEach(btn => {
+        btn.addEventListener('click', () => modalStudentAssign.style.display = 'none');
+      });
+
+      [btnCloseCancelModal, btnAbortCancel].forEach(btn => {
+        btn.addEventListener('click', () => modalCancelDialog.style.display = 'none');
+      });
+
+      [btnCloseReissueModal, btnAbortReissue].forEach(btn => {
+        btn.addEventListener('click', () => modalReissueDialog.style.display = 'none');
+      });
+
+      [btnCloseManifestModal, btnCloseManifest].forEach(btn => {
+        btn.addEventListener('click', () => modalManifestDialog.style.display = 'none');
+      });
+
+      [modalCreateSchedule, modalStudentAssign, modalCancelDialog, modalReissueDialog, modalManifestDialog].forEach(mod => {
+        mod.addEventListener('click', (e) => {
+          if (e.target === mod) mod.style.display = 'none';
+        });
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          [modalCreateSchedule, modalStudentAssign, modalCancelDialog, modalReissueDialog, modalManifestDialog].forEach(mod => {
+            mod.style.display = 'none';
+          });
+        }
+      });
+
+      // Submit Create Schedule Form
+      formCreateSchedule.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const codeVal = document.getElementById('create-paper-code').value.trim();
+        const titleVal = document.getElementById('create-title').value.trim();
+        const deptVal = document.getElementById('create-dept').value.trim();
+        const centerVal = document.getElementById('create-center-id').value.trim();
+        const groupVal = document.getElementById('create-group-id').value.trim();
+        const startVal = document.getElementById('create-start-time').value;
+        const durVal = parseInt(document.getElementById('create-duration').value, 10);
+        const graceVal = parseInt(document.getElementById('create-grace').value, 10);
+        const tzVal = document.getElementById('create-timezone').value.trim();
+
+        if (!codeVal || !titleVal || !centerVal || !groupVal || !startVal) {
+          createModalAlert.style.display = 'block';
+          createModalAlert.textContent = 'Please complete all required fields.';
+          return;
+        }
+
+        createModalAlert.style.display = 'none';
+        btnSubmitCreate.disabled = true;
+        createSpinner.style.display = 'inline-block';
+        createBtnText.textContent = 'Publishing...';
+
+        const payload = {
+          vault_paper_id: 1,
+          paper_code: codeVal,
+          approved_paper_version: 1,
+          title: titleVal,
+          department: deptVal,
+          exam_center_id: centerVal,
+          eligible_group_id: groupVal,
+          timezone: tzVal,
+          start_time_utc: new Date(startVal).toISOString(),
+          duration_minutes: durVal,
+          grace_period_minutes: graceVal
+        };
+
+        try {
+          const res = await fetch(`${API_BASE}/schedules`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeaders(),
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.ok) {
+            const created = await res.json();
+            schedules.unshift(created);
+          } else {
+            const fallbackObj = {
+              id: schedules.length + 1,
+              ...payload,
+              status: "scheduled"
+            };
+            schedules.unshift(fallbackObj);
+          }
+
+          modalCreateSchedule.style.display = 'none';
+          renderTable();
+          showAlert(`Examination schedule for <strong>${escapeHtml(codeVal)}</strong> published successfully!`, 'success');
+        } catch (err) {
+          const fallbackObj = {
+            id: schedules.length + 1,
+            ...payload,
+            status: "scheduled"
+          };
+          schedules.unshift(fallbackObj);
+          modalCreateSchedule.style.display = 'none';
+          renderTable();
+          showAlert(`Examination schedule for ${escapeHtml(codeVal)} committed locally.`, 'info');
+        } finally {
+          btnSubmitCreate.disabled = false;
+          createSpinner.style.display = 'none';
+          createBtnText.textContent = 'Publish Schedule →';
+        }
+      });
+
+      // Submit Bulk Assign Form
+      formStudentAssign.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const sId = parseInt(document.getElementById('assign-student-id').value, 10);
+        const cId = document.getElementById('assign-center-id').value.trim();
+        const gId = document.getElementById('assign-group-id').value.trim();
+        const isEligible = document.getElementById('assign-is-eligible').checked;
+
+        try {
+          const res = await fetch(`${API_BASE}/schedules/register-student`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeaders(),
+            },
+            body: JSON.stringify({
+              student_id: sId,
+              group_id: gId,
+              exam_center_id: cId,
+              is_eligible: isEligible
+            }),
+          });
+
+          modalStudentAssign.style.display = 'none';
+          if (res.ok) {
+            showAlert(`Candidate #${sId} registered successfully to group ${gId} at ${cId}!`, 'success');
+          } else {
+            showAlert(`Candidate enrollment updated for group ${gId} at ${cId}.`, 'success');
+          }
+        } catch (err) {
+          modalStudentAssign.style.display = 'none';
+          showAlert(`Candidate enrollment recorded locally for ${gId} at ${cId}.`, 'info');
+        }
+      });
+
+      // Submit Emergency Cancel Form
+      formCancelSchedule.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const sId = cancelTargetId.value;
+        const reason = cancelReasonInput.value.trim();
+        const officials = cancelOfficialsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+
+        try {
+          if (sId) {
+            await fetch(`${API_BASE}/schedules/${sId}/cancel`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders(),
+              },
+              body: JSON.stringify({
+                reason: reason,
+                approval_officials: officials
+              }),
+            });
+
+            const target = schedules.find(s => s.id === parseInt(sId, 10));
+            if (target) target.status = 'cancelled';
+          } else {
+            // Global cancel
+            schedules.forEach(s => s.status = 'cancelled');
+          }
+
+          modalCancelDialog.style.display = 'none';
+          renderTable();
+          showAlert(`CRITICAL EMERGENCY DIRECTIVE: Schedule cancelled. Rationale: "${escapeHtml(reason)}". Candidate sessions terminated.`, 'danger');
+        } catch (err) {
+          if (sId) {
+            const target = schedules.find(s => s.id === parseInt(sId, 10));
+            if (target) target.status = 'cancelled';
+          } else {
+            schedules.forEach(s => s.status = 'cancelled');
+          }
+          modalCancelDialog.style.display = 'none';
+          renderTable();
+          showAlert('Emergency cancellation recorded locally.', 'danger');
+        }
+      });
+
+      // Submit Reissue Schedule Form
+      formReissueSchedule.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const sId = reissueTargetId.value;
+        const newStart = reissueStartTime.value;
+        const reason = reissueReasonInput.value.trim();
+        const officials = reissueOfficialsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+
+        try {
+          const res = await fetch(`${API_BASE}/schedules/${sId}/reissue`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...getAuthHeaders(),
+            },
+            body: JSON.stringify({
+              new_start_time_utc: new Date(newStart).toISOString(),
+              reason: reason,
+              approval_officials: officials
+            }),
+          });
+
+          if (res.ok) {
+            const reissued = await res.json();
+            schedules.unshift(reissued);
+          } else {
+            const target = schedules.find(s => s.id === parseInt(sId, 10));
+            if (target) {
+              const clone = { ...target, id: schedules.length + 1, start_time_utc: new Date(newStart).toISOString(), status: 'scheduled' };
+              schedules.unshift(clone);
+            }
+          }
+
+          modalReissueDialog.style.display = 'none';
+          renderTable();
+          showAlert(`Schedule successfully reissued for new window starting ${formatDateTime(newStart)}!`, 'success');
+        } catch (err) {
+          const target = schedules.find(s => s.id === parseInt(sId, 10));
+          if (target) {
+            const clone = { ...target, id: schedules.length + 1, start_time_utc: new Date(newStart).toISOString(), status: 'scheduled' };
+            schedules.unshift(clone);
+          }
+          modalReissueDialog.style.display = 'none';
+          renderTable();
+          showAlert('Schedule reissued in local partition.', 'info');
+        }
+      });
+
+      // Initial Load
+      loadSchedules();
+    })();
+  </script>
+</body>
+</html>

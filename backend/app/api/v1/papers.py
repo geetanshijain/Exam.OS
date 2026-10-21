@@ -1,4 +1,3 @@
-import asyncio
 import json
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -12,11 +11,14 @@ from fastapi.responses import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import ControllerUser, HODUser, SetterUser, get_current_user
+from app.core.deps import CurrentUser, get_current_user, require_permission
 from app.core.pdf_utils import build_decoy_pdf, stamp_pdf_bytes
+from app.core.permissions import Permission, verify_paper_object_access
 from app.db.session import get_session
 from app.models.alert import Alert, AlertSeverity
+from app.models.approval import Approval, ApprovalStatus
 from app.models.audit_log import AuditLog
+from app.models.print_history import PrintHistory
 from app.models.question_paper import PaperStatus, QuestionPaper
 from app.models.risk_score import RiskScore
 from app.models.user import User, UserRole
@@ -59,6 +61,7 @@ async def _fire_honeytoken(
     reason: str,
     ip: str,
 ) -> None:
+    """Synchronous honeytoken trigger. Strictly avoids unmanaged background tasks."""
     meta = json.dumps({"ip": ip, "reason": reason, "paper_id": paper_id})
 
     alert = Alert(
@@ -104,17 +107,32 @@ async def _fire_honeytoken(
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_paper(
-    current_user: SetterUser,
+    current_user: Annotated[User, Depends(require_permission(Permission.CREATE_QUESTIONS))],
     session: Annotated[AsyncSession, Depends(get_session)],
     title: Annotated[str, Form()],
     subject: Annotated[str, Form()],
     exam_date: Annotated[str, Form()],
+    department: Annotated[str | None, Form()] = None,
     description: Annotated[str | None, Form()] = None,
     file: UploadFile = File(...),
 ) -> dict:
+    """
+    Upload question paper with AES-256 vault encryption and
+    department object-level assignment.
+    """
     raw = await file.read()
     if not raw:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Empty file upload.")
+
+    # Target department defaults to setter's assigned department
+    target_dept = department.strip() if (department and department.strip()) else current_user.department
+
+    # Cross-department prevention: Setters cannot author papers outside their department
+    if current_user.role == UserRole.setter and target_dept.lower() != current_user.department.lower():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Cannot create question papers outside assigned department.",
+        )
 
     key, nonce, payload = _aes_encrypt(raw)
     blob_name = f"{uuid.uuid4().hex}.enc"
@@ -128,12 +146,13 @@ async def upload_paper(
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Invalid exam_date format (use ISO 8601)",
+            detail="Invalid exam_date format. Please use ISO 8601.",
         )
 
     paper = QuestionPaper(
-        title=title,
-        subject=subject,
+        title=title.strip(),
+        subject=subject.strip(),
+        department=target_dept,
         exam_date=exam_dt,
         description=description,
         file_path=str(blob_path),
@@ -149,6 +168,7 @@ async def upload_paper(
         "id": paper.id,
         "title": paper.title,
         "subject": paper.subject,
+        "department": paper.department,
         "status": paper.status.value,
         "created_at": paper.created_at.isoformat(),
     }
@@ -159,10 +179,18 @@ async def list_papers(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> list[dict]:
-    if current_user.role.value == "setter":
-        stmt = select(QuestionPaper).where(QuestionPaper.created_by == current_user.id)
-    else:
-        stmt = select(QuestionPaper)
+    """
+    List papers scoped by object-level authorization and department boundaries.
+    """
+    stmt = select(QuestionPaper)
+
+    # Setters only see their own authored papers
+    if current_user.role == UserRole.setter:
+        stmt = stmt.where(QuestionPaper.created_by == current_user.id)
+    # HODs only see papers within their department
+    elif current_user.role == UserRole.hod:
+        stmt = stmt.where(QuestionPaper.department.ilike(current_user.department))
+    # Controllers and Admins see all institutional papers
 
     result = await session.execute(stmt.order_by(QuestionPaper.created_at.desc()))
     papers = result.scalars().all()
@@ -172,6 +200,7 @@ async def list_papers(
             "id": p.id,
             "title": p.title,
             "subject": p.subject,
+            "department": p.department,
             "exam_date": p.exam_date.isoformat(),
             "status": p.status.value,
             "created_by": p.created_by,
@@ -182,6 +211,136 @@ async def list_papers(
     ]
 
 
+@router.get("/{paper_id}")
+async def get_paper(
+    paper_id: int,
+    current_user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> dict:
+    """Get single paper detail with object-level IDOR validation."""
+    paper = await session.get(QuestionPaper, paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+
+    verify_paper_object_access(current_user, paper)
+
+    return {
+        "id": paper.id,
+        "title": paper.title,
+        "subject": paper.subject,
+        "department": paper.department,
+        "exam_date": paper.exam_date.isoformat(),
+        "status": paper.status.value,
+        "created_by": paper.created_by,
+        "created_at": paper.created_at.isoformat(),
+        "description": paper.description,
+    }
+
+
+@router.patch("/{paper_id}/hod-review")
+async def hod_review(
+    paper_id: int,
+    action: str,
+    current_user: Annotated[User, Depends(require_permission(Permission.REVIEW_PAPERS))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    comment: str | None = None,
+) -> dict:
+    """
+    Department Head review stage. Enforces departmental object-level boundary
+    and creates an immutable Approval record.
+    """
+    paper = await session.get(QuestionPaper, paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+
+    # Object-level check: HOD can only review papers within their department
+    verify_paper_object_access(current_user, paper)
+
+    if paper.status != PaperStatus.pending_hod:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Paper is not in Pending_HOD state (current: {paper.status.value})",
+        )
+
+    if action == "approve":
+        paper.status = PaperStatus.pending_controller
+        approval_status = ApprovalStatus.approved
+    elif action == "reject":
+        paper.status = PaperStatus.rejected
+        approval_status = ApprovalStatus.rejected
+    else:
+        raise HTTPException(status_code=422, detail="action must be 'approve' or 'reject'")
+
+    approval = Approval(
+        paper_id=paper.id,
+        approver_id=current_user.id,
+        status=approval_status,
+        comment=comment,
+        approved_at=datetime.now(timezone.utc),
+    )
+    session.add(approval)
+    await session.commit()
+
+    return {"id": paper.id, "status": paper.status.value, "stage": "hod_completed"}
+
+
+@router.patch("/{paper_id}/controller-review")
+async def controller_review(
+    paper_id: int,
+    action: str,
+    current_user: Annotated[User, Depends(require_permission(Permission.APPROVE_RELEASE, require_mfa=True))],
+    session: Annotated[AsyncSession, Depends(get_session)],
+    comment: str | None = None,
+) -> dict:
+    """
+    Institutional Controller approval. Requires verified MFA and enforces dual-custody
+    (controller cannot be the same user who approved HOD step).
+    """
+    paper = await session.get(QuestionPaper, paper_id)
+    if not paper:
+        raise HTTPException(status_code=404, detail="Paper not found.")
+
+    if paper.status != PaperStatus.pending_controller:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Paper is not in Pending_Controller state (current: {paper.status.value})",
+        )
+
+    # Dual-Custody Check: Verify controller is not the original HOD approver
+    last_approval_stmt = (
+        select(Approval)
+        .where(Approval.paper_id == paper.id, Approval.status == ApprovalStatus.approved)
+        .order_by(Approval.created_at.desc())
+    )
+    last_approval = (await session.execute(last_approval_stmt)).scalars().first()
+    if last_approval and last_approval.approver_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Dual-custody policy violation: Final release approver cannot be the same individual as the initial department reviewer.",
+        )
+
+    if action == "approve":
+        paper.status = PaperStatus.approved_locked
+        approval_status = ApprovalStatus.approved
+    elif action == "reject":
+        paper.status = PaperStatus.rejected
+        approval_status = ApprovalStatus.rejected
+    else:
+        raise HTTPException(status_code=422, detail="action must be 'approve' or 'reject'")
+
+    approval = Approval(
+        paper_id=paper.id,
+        approver_id=current_user.id,
+        status=approval_status,
+        comment=comment,
+        approved_at=datetime.now(timezone.utc),
+    )
+    session.add(approval)
+    await session.commit()
+
+    return {"id": paper.id, "status": paper.status.value, "stage": "release_approved"}
+
+
 @router.get("/{paper_id}/download")
 async def download_paper(
     paper_id: int,
@@ -189,12 +348,19 @@ async def download_paper(
     current_user: Annotated[User, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> Response:
+    """
+    Time-locked paper extraction with dynamic forensic watermarking
+    and stealth decoy honeytoken delivery for out-of-window requests.
+    """
     ip = _client_ip(request)
     now = datetime.now(timezone.utc)
 
     paper = await session.get(QuestionPaper, paper_id)
     if not paper:
         raise HTTPException(status_code=404, detail="Paper not found")
+
+    # Object-level check: Ensure user has rights to this paper
+    verify_paper_object_access(current_user, paper)
 
     allowed_roles = {UserRole.printer, UserRole.controller, UserRole.admin}
     is_authorized_role = current_user.role in allowed_roles
@@ -207,6 +373,7 @@ async def download_paper(
     is_within_window = now >= window_open
     is_approved = paper.status == PaperStatus.approved_locked
 
+    # Trigger stealth honeytoken if access attempt is out-of-bounds
     if not is_authorized_role or not is_approved or not is_within_window:
         reason_parts = []
         if not is_authorized_role:
@@ -219,30 +386,30 @@ async def download_paper(
             reason_parts.append(f"time-locked ({minutes_left}min remaining)")
 
         reason = "; ".join(reason_parts)
-        asyncio.ensure_future(
-            _fire_honeytoken(session, current_user, paper_id, reason, ip)
-        )
+        await _fire_honeytoken(session, current_user, paper_id, reason, ip)
 
         decoy = build_decoy_pdf()
+        safe_title = paper.title.replace(" ", "_")[:40]
         return Response(
             content=decoy,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": 'attachment; filename="ExamOS_Decoy_Document.pdf"',
+                "Content-Disposition": f'attachment; filename="{safe_title}_DRAFT.pdf"',
             },
         )
 
     if not paper.file_path or not paper.encrypted_key:
-        raise HTTPException(status_code=500, detail="Vault record incomplete")
+        raise HTTPException(status_code=500, detail="Vault asset record incomplete.")
 
     blob_path = Path(paper.file_path)
     if not blob_path.exists():
-        raise HTTPException(status_code=500, detail="Encrypted asset missing from vault")
+        raise HTTPException(status_code=500, detail="Encrypted asset missing from vault storage.")
 
     key_meta = json.loads(paper.encrypted_key)
     encrypted_payload = blob_path.read_bytes()
     clear_bytes = _aes_decrypt(key_meta["key"], key_meta["nonce"], encrypted_payload)
 
+    # Record AuditLog and PrintHistory models
     audit = AuditLog(
         actor_id=current_user.id,
         action="AUTHORIZED_DOWNLOAD",
@@ -250,9 +417,17 @@ async def download_paper(
         entity_id=paper_id,
         metadata_json=json.dumps({"ip": ip, "email": current_user.email}),
     )
+    print_log = PrintHistory(
+        paper_id=paper.id,
+        printer_id=current_user.id,
+        copies=1,
+        location=f"IP: {ip}",
+    )
     session.add(audit)
+    session.add(print_log)
     await session.commit()
 
+    # Dynamic forensic watermark
     stamped = stamp_pdf_bytes(clear_bytes, current_user.email, ip, now)
     safe_title = paper.title.replace(" ", "_")[:40]
 
@@ -263,57 +438,3 @@ async def download_paper(
             "Content-Disposition": f'attachment; filename="{safe_title}_SECURE.pdf"',
         },
     )
-
-
-@router.patch("/{paper_id}/hod-review")
-async def hod_review(
-    paper_id: int,
-    action: str,
-    current_user: HODUser,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict:
-    paper = await session.get(QuestionPaper, paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found")
-    if paper.status != PaperStatus.pending_hod:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Paper is not in Pending_HOD state (current: {paper.status.value})",
-        )
-
-    if action == "approve":
-        paper.status = PaperStatus.pending_controller
-    elif action == "reject":
-        paper.status = PaperStatus.rejected
-    else:
-        raise HTTPException(status_code=422, detail="action must be 'approve' or 'reject'")
-
-    await session.commit()
-    return {"id": paper.id, "status": paper.status.value}
-
-
-@router.patch("/{paper_id}/controller-review")
-async def controller_review(
-    paper_id: int,
-    action: str,
-    current_user: ControllerUser,
-    session: Annotated[AsyncSession, Depends(get_session)],
-) -> dict:
-    paper = await session.get(QuestionPaper, paper_id)
-    if not paper:
-        raise HTTPException(status_code=404, detail="Paper not found")
-    if paper.status != PaperStatus.pending_controller:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Paper is not in Pending_Controller state (current: {paper.status.value})",
-        )
-
-    if action == "approve":
-        paper.status = PaperStatus.approved_locked
-    elif action == "reject":
-        paper.status = PaperStatus.rejected
-    else:
-        raise HTTPException(status_code=422, detail="action must be 'approve' or 'reject'")
-
-    await session.commit()
-    return {"id": paper.id, "status": paper.status.value}

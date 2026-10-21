@@ -1,0 +1,5 @@
+UNIT 1: CPU Scheduling and Synchronization
+- Topics: Round Robin, Multi-level queues, Semaphores, Mutexes
+
+UNIT 2: Virtual Memory and Paging
+- Topics: Page replacement algorithms, LRU, FIFO, Inverted Page Tables

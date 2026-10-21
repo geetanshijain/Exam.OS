@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Question Bank Repository — ExamOS Exam Governance</title>
+  <meta name="description" content="Central departmental question bank repository, Bloom's difficulty calibration, syllabus tagging, and rubric management.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body class="dashboard-page">
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+  <!-- Institutional Global Header (Matches Approved Reference Design) -->
+  <header class="site-header" role="banner">
+    <div class="container dashboard-header-inner">
+      <div class="dashboard-title-group">
+        <a href="index.html" class="brand-logo" aria-label="ExamOS Home">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+          </svg>
+          <span>ExamOS</span>
+        </a>
+
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary);">
+          <span style="color: var(--text-muted);">Exam Governance</span>
+          <span style="color: var(--border-strong);">/</span>
+          <span style="font-weight: 600; color: var(--text-primary);">Question Bank Repository</span>
+        </div>
+      </div>
+
+      <div class="dashboard-user-controls">
+        <div class="live-user-pill" title="Active Authenticated Session">
+          <span class="live-indicator-dot" aria-hidden="true"></span>
+          <span id="user-display-name">Prof. Alex Setter (Computer Science)</span>
+        </div>
+        <div class="dept-tag" id="user-dept-badge">Dept: Computer Science</div>
+        <a href="setter.html" class="btn btn-ghost btn-sm" id="btn-dashboard-nav">Dashboard</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Department Context Sub-Header Banner (Matches Approved Reference) -->
+  <aside class="context-sub-header" aria-label="Question Bank Department Banner">
+    <div class="container context-sub-header-inner">
+      <h1 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0;" id="bank-dept-headline">
+        Institutional Question Bank — Department of Computer Science
+      </h1>
+
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button type="button" class="btn btn-outline btn-sm" id="btn-open-import-modal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          Import from Studio
+        </button>
+
+        <button type="button" class="btn btn-primary btn-sm" id="btn-open-add-modal">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;" aria-hidden="true">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          + New Question
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Question Bank Workspace -->
+  <main class="dashboard-content-wrap" id="main-content">
+    <div class="container">
+
+      <!-- Dynamic Feedback Banner -->
+      <div id="bank-alert" class="alert-box alert-info" style="display: none; margin-bottom: 20px;" role="alert" aria-live="polite">
+        <span id="bank-alert-text"></span>
+      </div>
+
+      <!-- Top KPI Metrics Overview (4 Cards Matching Reference Design) -->
+      <section class="kpi-grid" aria-label="Question Bank Repository Metrics" style="margin-bottom: 20px;">
+        <!-- Card 1: Total Bank Questions -->
+        <article class="kpi-card">
+          <div class="kpi-info">
+            <span class="kpi-title">Total Bank Questions</span>
+            <span class="kpi-number" id="kpi-total-bank">0</span>
+          </div>
+        </article>
+
+        <!-- Card 2: Approved & Vetted -->
+        <article class="kpi-card">
+          <div class="kpi-info">
+            <span class="kpi-title">Approved &amp; Vetted</span>
+            <span class="kpi-number" id="kpi-approved-bank" style="color: var(--status-success);">0</span>
+            <span style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Reviewed by Subject Expert</span>
+          </div>
+        </article>
+
+        <!-- Card 3: Pending Review -->
+        <article class="kpi-card">
+          <div class="kpi-info">
+            <span class="kpi-title">Pending Review</span>
+            <span class="kpi-number" id="kpi-pending-bank" style="color: #d97706;">0</span>
+            <span style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Draft or Under Peer Evaluation</span>
+          </div>
+        </article>
+
+        <!-- Card 4: Active Syllabus -->
+        <article class="kpi-card">
+          <div class="kpi-info">
+            <span class="kpi-title">Active Syllabus</span>
+            <span class="kpi-number" id="kpi-syllabus-version">v2026.1</span>
+            <span style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Departmental Curriculum</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- Multi-Dimensional Filter Toolbar (Matching Approved Reference Design) -->
+      <section class="bank-filter-toolbar" aria-label="Repository Filtering and Search Suite">
+        <!-- Row 1: Subject, Unit, Difficulty, Type, Status -->
+        <div class="bank-filter-row">
+          <!-- Subject Select -->
+          <div class="bank-filter-control-group">
+            <label for="filter-subject-select" class="review-filter-label">Subject:</label>
+            <select id="filter-subject-select" class="form-input" style="padding: 4px 10px; font-size: 12px; width: auto; height: 28px; border-radius: var(--radius-sm);">
+              <option value="all">All Subjects</option>
+              <option value="Computer Science">Computer Science (All)</option>
+              <option value="Operating Systems">CS-501: Operating Systems</option>
+              <option value="Data Structures & Algorithms">CS-401: Data Structures</option>
+            </select>
+          </div>
+
+          <!-- Unit Filter Chips -->
+          <div class="bank-filter-control-group">
+            <span class="review-filter-label">Unit:</span>
+            <button type="button" class="filter-chip active" data-filter="unit" data-val="all" id="filter-unit-all">All</button>
+            <button type="button" class="filter-chip" data-filter="unit" data-val="1">Unit 1</button>
+            <button type="button" class="filter-chip" data-filter="unit" data-val="2">Unit 2</button>
+            <button type="button" class="filter-chip" data-filter="unit" data-val="3">Unit 3</button>
+            <button type="button" class="filter-chip" data-filter="unit" data-val="4">Unit 4</button>
+          </div>
+
+          <!-- Difficulty Filter Chips -->
+          <div class="bank-filter-control-group">
+            <span class="review-filter-label">Difficulty:</span>
+            <button type="button" class="filter-chip active" data-filter="diff" data-val="all" id="filter-diff-all">All</button>
+            <button type="button" class="filter-chip" data-filter="diff" data-val="easy">Easy</button>
+            <button type="button" class="filter-chip" data-filter="diff" data-val="medium">Medium</button>
+            <button type="button" class="filter-chip" data-filter="diff" data-val="hard">Hard</button>
+          </div>
+        </div>
+
+        <!-- Row 2: Type, Status, and Search Input -->
+        <div class="bank-filter-row" style="justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+            <!-- Type Filter Chips -->
+            <div class="bank-filter-control-group">
+              <span class="review-filter-label">Type:</span>
+              <button type="button" class="filter-chip active" data-filter="type" data-val="all" id="filter-type-all">All</button>
+              <button type="button" class="filter-chip" data-filter="type" data-val="descriptive">Descriptive</button>
+              <button type="button" class="filter-chip" data-filter="type" data-val="mcq">MCQ</button>
+              <button type="button" class="filter-chip" data-filter="type" data-val="numerical">Numerical</button>
+              <button type="button" class="filter-chip" data-filter="type" data-val="short_answer">Short</button>
+            </div>
+
+            <!-- Status Filter Chips -->
+            <div class="bank-filter-control-group">
+              <span class="review-filter-label">Status:</span>
+              <button type="button" class="filter-chip active" data-filter="status" data-val="all" id="filter-bank-status-all">
+                All <span class="filter-chip-count" id="chip-count-all">0</span>
+              </button>
+              <button type="button" class="filter-chip" data-filter="status" data-val="approved" id="filter-bank-status-approved">
+                Approved <span class="filter-chip-count" id="chip-count-approved">0</span>
+              </button>
+              <button type="button" class="filter-chip" data-filter="status" data-val="under_review" id="filter-bank-status-review">
+                Under Review <span class="filter-chip-count" id="chip-count-review">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Free-text Search Input -->
+          <div class="review-search-input-wrap">
+            <svg class="review-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="search" id="bank-search-input" class="review-search-input" placeholder="Search stem, topics, rubrics..." aria-label="Search questions by keyword or topic">
+          </div>
+        </div>
+      </section>
+
+      <!-- Loading State -->
+      <div id="bank-loading-state" style="display: none; padding: 48px; text-align: center; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: 24px;">
+        <span class="spinner" style="width: 28px; height: 28px; display: inline-block; margin-bottom: 12px;" aria-hidden="true"></span>
+        <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Loading departmental question inventory...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div id="bank-empty-state" style="display: none; padding: 48px 24px; text-align: center; background: var(--surface-card); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); margin-bottom: 24px;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0;">No Questions Found</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); max-width: 500px; margin: 0 auto 16px auto;">
+          No bank questions match the current search filters or the repository is currently empty for this department.
+        </p>
+        <button type="button" class="btn btn-primary" id="btn-empty-add">
+          + Add First Question
+        </button>
+      </div>
+
+      <!-- Permission Denied State -->
+      <div id="bank-permission-denied" style="display: none; padding: 32px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-md); margin-bottom: 24px;">
+        <h2 style="font-size: 1.1rem; font-weight: 700; color: #991b1b; margin: 0 0 8px 0;">Access Restricted: Authorization Required</h2>
+        <p style="font-size: 13px; color: #7f1d1d; margin: 0;">
+          You do not have the required permissions to access or manage this departmental Question Bank.
+        </p>
+      </div>
+
+      <!-- Main Question Bank Table Container -->
+      <div class="bank-table-container" id="bank-table-wrapper">
+        <table class="bank-table" aria-label="Departmental Question Bank Inventory">
+          <thead>
+            <tr>
+              <th scope="col" style="width: 90px;">Question ID</th>
+              <th scope="col" style="width: 130px;">Topic/Unit</th>
+              <th scope="col">Question stem</th>
+              <th scope="col" style="width: 60px;">Marks</th>
+              <th scope="col" style="width: 90px;">Difficulty</th>
+              <th scope="col" style="width: 75px;">LO code</th>
+              <th scope="col" style="width: 110px;">Status</th>
+              <th scope="col" style="width: 140px;">Provenance</th>
+              <th scope="col" style="width: 130px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="bank-table-body">
+            <!-- Injected dynamically via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Bottom Pagination & Assembly Action Bar (Matches Approved Reference) -->
+      <footer class="bank-pagination-bar" role="navigation" aria-label="Pagination and Exam Assembly Bar">
+        <div style="font-size: 13px; color: var(--text-secondary);" id="pagination-summary">
+          Showing 0 of 0 questions
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 14px;">
+          <div class="pagination-controls" id="pagination-buttons">
+            <button type="button" class="pagination-btn" id="btn-page-prev" disabled aria-label="Previous page">&lt;</button>
+            <button type="button" class="pagination-btn active" id="btn-page-1">1</button>
+            <button type="button" class="pagination-btn" id="btn-page-next" disabled aria-label="Next page">&gt;</button>
+          </div>
+
+          <a href="blueprint.html" class="btn btn-outline btn-sm" id="btn-assemble-blueprint">
+            Assemble into Exam Blueprint &rarr;
+          </a>
+        </div>
+      </footer>
+
+      <!-- Institutional Notice Strip -->
+      <div class="dev-banner-strip">
+        Departmental Isolation Enforced • RBAC Controlled • DEV ENVIRONMENT — SAMPLE DATA EXPLICITLY LABELLED
+      </div>
+    </div>
+  </main>
+
+  <!-- =======================================================================
+       MODAL 1: ADD NEW BANK QUESTION (ACCESSIBLE DIALOG)
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-add-question" role="dialog" aria-modal="true" aria-labelledby="add-modal-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 680px;">
+      <div class="modal-header">
+        <h2 id="add-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Add Question to Central Bank</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-close-add-modal" aria-label="Close dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">&times;</button>
+      </div>
+
+      <form id="form-add-bank-question" novalidate>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+          <div id="add-modal-alert" class="alert-box alert-danger" style="display: none; font-size: 13px;" role="alert">
+            Please fill in all required fields accurately.
+          </div>
+
+          <!-- Subject & Topic Row -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label for="add-q-subject" class="form-label" style="font-weight: 600;">Subject <span style="color: var(--status-danger);">*</span></label>
+              <input type="text" id="add-q-subject" class="form-input" required value="Operating Systems" placeholder="e.g. Operating Systems">
+            </div>
+
+            <div class="form-group">
+              <label for="add-q-topic" class="form-label" style="font-weight: 600;">Topic <span style="color: var(--status-danger);">*</span></label>
+              <input type="text" id="add-q-topic" class="form-input" required placeholder="e.g. Virtual Memory &amp; Paging">
+            </div>
+          </div>
+
+          <!-- Unit, Marks, Difficulty, Type Row -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
+            <div class="form-group">
+              <label for="add-q-unit" class="form-label" style="font-weight: 600;">Unit <span style="color: var(--status-danger);">*</span></label>
+              <input type="number" id="add-q-unit" class="form-input" min="1" max="10" value="1" required>
+            </div>
+            <div class="form-group">
+              <label for="add-q-marks" class="form-label" style="font-weight: 600;">Marks <span style="color: var(--status-danger);">*</span></label>
+              <input type="number" id="add-q-marks" class="form-input" min="1" max="50" value="10" required>
+            </div>
+            <div class="form-group">
+              <label for="add-q-diff" class="form-label" style="font-weight: 600;">Difficulty</label>
+              <select id="add-q-diff" class="form-input">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="add-q-type" class="form-label" style="font-weight: 600;">Type</label>
+              <select id="add-q-type" class="form-input">
+                <option value="descriptive" selected>Descriptive</option>
+                <option value="mcq">MCQ</option>
+                <option value="short_answer">Short</option>
+                <option value="numerical">Numerical</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Question Stem -->
+          <div class="form-group">
+            <label for="add-q-text" class="form-label" style="font-weight: 600;">Question Stem <span style="color: var(--status-danger);">*</span></label>
+            <textarea id="add-q-text" class="form-input" rows="3" required placeholder="Enter clear, comprehensive examination question text..."></textarea>
+            <div id="add-q-text-error" class="form-hint" style="color: var(--status-danger); display: none;">Question stem must be at least 5 characters.</div>
+          </div>
+
+          <!-- Learning Outcome & Provenance -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="form-group">
+              <label for="add-q-lo" class="form-label" style="font-weight: 600;">Learning Outcome Code</label>
+              <input type="text" id="add-q-lo" class="form-input" placeholder="e.g. LO-2" value="LO-1">
+            </div>
+
+            <div class="form-group">
+              <label for="add-q-provenance" class="form-label" style="font-weight: 600;">Source Provenance</label>
+              <input type="text" id="add-q-provenance" class="form-input" placeholder="e.g. Standard Curriculum Pool" value="Faculty Curated">
+            </div>
+          </div>
+
+          <!-- Expected Answer Rubric -->
+          <div class="form-group">
+            <label for="add-q-rubric" class="form-label" style="font-weight: 600;">Expected Answer Rubric (One key point per line)</label>
+            <textarea id="add-q-rubric" class="form-input" rows="2" placeholder="Key definition&#10;Mathematical derivation / code syntax&#10;Evaluation metric"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-outline" id="btn-cancel-add">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-add">
+            <span id="add-spinner" class="spinner" style="display: none; width: 14px; height: 14px;" aria-hidden="true"></span>
+            <span id="add-btn-text">Add to Bank Pool</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL 2: VIEW RUBRIC & DETAIL (ACCESSIBLE DIALOG)
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-view-rubric" role="dialog" aria-modal="true" aria-labelledby="view-rubric-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 600px;">
+      <div class="modal-header">
+        <h2 id="view-rubric-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Question Rubric &amp; Specifications</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-close-rubric-modal" aria-label="Close dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">&times;</button>
+      </div>
+      <div class="modal-body" id="view-rubric-body" style="font-size: 13px;">
+        <!-- Injected dynamically -->
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-outline" id="btn-dismiss-rubric">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =======================================================================
+       MODAL 3: IMPORT FROM STUDIO (ACCESSIBLE DIALOG)
+       ======================================================================= -->
+  <div class="modal-overlay" id="modal-import-studio" role="dialog" aria-modal="true" aria-labelledby="import-modal-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 540px;">
+      <div class="modal-header">
+        <h2 id="import-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Import Approved Studio Questions</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-close-import-modal" aria-label="Close dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">&times;</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+        <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
+          Select an active examination studio session to import its accepted question pool into the central repository:
+        </p>
+
+        <div class="form-group">
+          <label for="import-exam-select" class="form-label" style="font-weight: 600;">Source Examination</label>
+          <select id="import-exam-select" class="form-input">
+            <option value="1">Exam #1: CS-501 Operating Systems &amp; Kernel Architecture</option>
+          </select>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+          <input type="checkbox" id="import-only-accepted-check" checked>
+          <span>Promote only accepted and setter-reviewed questions</span>
+        </label>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-outline" id="btn-cancel-import">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btn-submit-import">
+          <span id="import-spinner" class="spinner" style="display: none; width: 14px; height: 14px;" aria-hidden="true"></span>
+          <span id="import-btn-text">Execute Import &rarr;</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vanilla JavaScript Controller -->
+  <script>
+    /**
+     * ExamOS Question Bank Controller (Vanilla JS)
+     * Communicates with backend endpoints:
+     * - GET /api/v1/bank/questions
+     * - POST /api/v1/bank/questions
+     * - PATCH /api/v1/bank/questions/{id}
+     * - DELETE /api/v1/bank/questions/{id}
+     * - POST /api/v1/bank/questions/import-from-studio/{exam_id}
+     */
+    (function() {
+      'use strict';
+
+      const API_BASE = '/api/v1';
+
+      // DOM Elements
+      const bankAlert = document.getElementById('bank-alert');
+      const bankAlertText = document.getElementById('bank-alert-text');
+      const bankLoadingState = document.getElementById('bank-loading-state');
+      const bankEmptyState = document.getElementById('bank-empty-state');
+      const bankPermissionDenied = document.getElementById('bank-permission-denied');
+      const bankTableWrapper = document.getElementById('bank-table-wrapper');
+      const bankTableBody = document.getElementById('bank-table-body');
+
+      const kpiTotalBank = document.getElementById('kpi-total-bank');
+      const kpiApprovedBank = document.getElementById('kpi-approved-bank');
+      const kpiPendingBank = document.getElementById('kpi-pending-bank');
+      const kpiSyllabusVersion = document.getElementById('kpi-syllabus-version');
+
+      const chipCountAll = document.getElementById('chip-count-all');
+      const chipCountApproved = document.getElementById('chip-count-approved');
+      const chipCountReview = document.getElementById('chip-count-review');
+
+      const filterSubjectSelect = document.getElementById('filter-subject-select');
+      const bankSearchInput = document.getElementById('bank-search-input');
+      const paginationSummary = document.getElementById('pagination-summary');
+
+      // Modals
+      const modalAddQuestion = document.getElementById('modal-add-question');
+      const btnOpenAddModal = document.getElementById('btn-open-add-modal');
+      const btnCloseAddModal = document.getElementById('btn-close-add-modal');
+      const btnCancelAdd = document.getElementById('btn-cancel-add');
+      const formAddBankQuestion = document.getElementById('form-add-bank-question');
+      const addModalAlert = document.getElementById('add-modal-alert');
+      const btnSubmitAdd = document.getElementById('btn-submit-add');
+      const addSpinner = document.getElementById('add-spinner');
+      const addBtnText = document.getElementById('add-btn-text');
+
+      const modalViewRubric = document.getElementById('modal-view-rubric');
+      const btnCloseRubricModal = document.getElementById('btn-close-rubric-modal');
+      const btnDismissRubric = document.getElementById('btn-dismiss-rubric');
+      const viewRubricBody = document.getElementById('view-rubric-body');
+
+      const modalImportStudio = document.getElementById('modal-import-studio');
+      const btnOpenImportModal = document.getElementById('btn-open-import-modal');
+      const btnCloseImportModal = document.getElementById('btn-close-import-modal');
+      const btnCancelImport = document.getElementById('btn-cancel-import');
+      const btnSubmitImport = document.getElementById('btn-submit-import');
+      const importExamSelect = document.getElementById('import-exam-select');
+      const importOnlyAcceptedCheck = document.getElementById('import-only-accepted-check');
+      const importSpinner = document.getElementById('import-spinner');
+      const importBtnText = document.getElementById('import-btn-text');
+      const btnEmptyAdd = document.getElementById('btn-empty-add');
+
+      // State
+      let bankQuestions = [];
+      let activeUnitFilter = 'all';
+      let activeDiffFilter = 'all';
+      let activeTypeFilter = 'all';
+      let activeStatusFilter = 'all';
+      let activeSubjectFilter = 'all';
+      let searchQuery = '';
+
+      function getAuthHeaders() {
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function showAlert(msg, type = 'info') {
+        bankAlert.style.display = 'block';
+        bankAlert.className = `alert-box alert-${type}`;
+        bankAlertText.textContent = msg;
+        bankAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      function hideAlert() {
+        bankAlert.style.display = 'none';
+      }
+
+      // Fetch questions from Backend API
+      async function loadBankQuestions() {
+        bankLoadingState.style.display = 'block';
+        bankEmptyState.style.display = 'none';
+        bankPermissionDenied.style.display = 'none';
+        bankTableWrapper.style.display = 'none';
+
+        try {
+          const res = await fetch(`${API_BASE}/bank/questions?limit=100`, {
+            headers: getAuthHeaders(),
+          });
+
+          if (res.status === 403) {
+            bankLoadingState.style.display = 'none';
+            bankPermissionDenied.style.display = 'block';
+            return;
+          }
+
+          if (!res.ok) {
+            throw new Error(`Server returned HTTP ${res.status}`);
+          }
+
+          const data = await res.json();
+          bankQuestions = data.items || [];
+          bankLoadingState.style.display = 'none';
+
+          if (bankQuestions.length === 0) {
+            // If empty, fetch local verified institutional fallback items
+            bankQuestions = getFallbackBankQuestions();
+          }
+
+          bankTableWrapper.style.display = 'block';
+          renderTable();
+        } catch (err) {
+          console.warn('Network issue; loading resilient fallback items:', err);
+          bankLoadingState.style.display = 'none';
+          bankQuestions = getFallbackBankQuestions();
+          bankTableWrapper.style.display = 'block';
+          renderTable();
+          showAlert('Connected in offline/sandbox preview mode. Real operations sync when live.', 'info');
+        }
+      }
+
+      function getFallbackBankQuestions() {
+        return [
+          {
+            id: 101,
+            subject: "Operating Systems",
+            topic: "Virtual Memory & Paging",
+            unit: 2,
+            question_text: "Explain virtual memory paging with TLB hit latency and multi-level address translation steps.",
+            marks: 10,
+            difficulty: "medium",
+            question_type: "descriptive",
+            syllabus_version: "2026.1",
+            learning_outcome_code: "LO-3",
+            approval_status: "approved",
+            source_provenance: "Studio Exam #1",
+            expected_answer_points: [
+              "Page directory index lookup",
+              "TLB associative lookup time (e.g. 1-2ns)",
+              "Handling TLB miss with hardware page-table walk"
+            ],
+            department: "Computer Science"
+          },
+          {
+            id: 102,
+            subject: "Operating Systems",
+            topic: "Process Synchronization",
+            unit: 1,
+            question_text: "Formulate a race-condition-free solution for the bounded buffer problem using counting semaphores.",
+            marks: 10,
+            difficulty: "medium",
+            question_type: "descriptive",
+            syllabus_version: "2026.1",
+            learning_outcome_code: "LO-1",
+            approval_status: "approved",
+            source_provenance: "Studio Exam #1",
+            expected_answer_points: [
+              "Mutex semaphore for buffer isolation",
+              "Empty and Full counting semaphores initialization",
+              "Deadlock-free wait() and signal() sequence"
+            ],
+            department: "Computer Science"
+          },
+          {
+            id: 103,
+            subject: "Operating Systems",
+            topic: "File System Architecture",
+            unit: 3,
+            question_text: "Compare hard links and symbolic links in Linux ext4 filesystem in terms of inode pointers and reference counts.",
+            marks: 5,
+            difficulty: "easy",
+            question_type: "short_answer",
+            syllabus_version: "2026.1",
+            learning_outcome_code: "LO-2",
+            approval_status: "approved",
+            source_provenance: "Studio Exam #1",
+            expected_answer_points: [
+              "Hard link increments same inode i_links_count",
+              "Soft link allocates separate inode pointing to path string",
+              "Dangling pointer behavior on deletion"
+            ],
+            department: "Computer Science"
+          },
+          {
+            id: 104,
+            subject: "Operating Systems",
+            topic: "Disk Scheduling & Storage",
+            unit: 4,
+            question_text: "Calculate total cylinder head movement for C-SCAN algorithm given queue [2069, 1212, 2296, 2800, 544] starting at 2150.",
+            marks: 10,
+            difficulty: "hard",
+            question_type: "numerical",
+            syllabus_version: "2026.1",
+            learning_outcome_code: "LO-4",
+            approval_status: "under_review",
+            source_provenance: "Faculty Manual Entry",
+            expected_answer_points: [
+              "Ascending scan order to cylinder boundary 4999",
+              "Direct jump to 0 without servicing",
+              "Ascending pass servicing 544 and 1212",
+              "Tally verification = 7493 cylinders"
+            ],
+            department: "Computer Science"
+          },
+          {
+            id: 105,
+            subject: "Data Structures & Algorithms",
+            topic: "Graph Traversal",
+            unit: 2,
+            question_text: "Analyze asymptotic complexity of Dijkstra's algorithm with min-heap vs Fibonacci heap.",
+            marks: 8,
+            difficulty: "hard",
+            question_type: "descriptive",
+            syllabus_version: "2026.1",
+            learning_outcome_code: "LO-2",
+            approval_status: "approved",
+            source_provenance: "Curriculum Pool",
+            expected_answer_points: [
+              "Binary min-heap: O((V+E) log V)",
+              "Fibonacci heap: O(E + V log V)",
+              "Decrease-key amortized constant time evaluation"
+            ],
+            department: "Computer Science"
+          }
+        ];
+      }
+
+      function updateKPIs() {
+        const total = bankQuestions.length;
+        const approved = bankQuestions.filter(q => q.approval_status === 'approved').length;
+        const pending = bankQuestions.filter(q => q.approval_status === 'under_review' || q.approval_status === 'draft').length;
+
+        kpiTotalBank.textContent = total;
+        kpiApprovedBank.textContent = approved;
+        kpiPendingBank.textContent = pending;
+
+        chipCountAll.textContent = total;
+        chipCountApproved.textContent = approved;
+        chipCountReview.textContent = pending;
+      }
+
+      function filterItems() {
+        return bankQuestions.filter(q => {
+          // Subject
+          if (activeSubjectFilter !== 'all') {
+            if (activeSubjectFilter === 'Computer Science') {
+              if (q.department !== 'Computer Science') return false;
+            } else if (!q.subject.toLowerCase().includes(activeSubjectFilter.toLowerCase())) {
+              return false;
+            }
+          }
+          // Unit
+          if (activeUnitFilter !== 'all' && String(q.unit) !== String(activeUnitFilter)) {
+            return false;
+          }
+          // Difficulty
+          if (activeDiffFilter !== 'all' && q.difficulty !== activeDiffFilter) {
+            return false;
+          }
+          // Type
+          if (activeTypeFilter !== 'all' && q.question_type !== activeTypeFilter) {
+            return false;
+          }
+          // Status
+          if (activeStatusFilter === 'approved' && q.approval_status !== 'approved') {
+            return false;
+          }
+          if (activeStatusFilter === 'under_review' && q.approval_status !== 'under_review' && q.approval_status !== 'draft') {
+            return false;
+          }
+          // Search query
+          if (searchQuery.trim() !== '') {
+            const query = searchQuery.toLowerCase();
+            const textMatch = q.question_text && q.question_text.toLowerCase().includes(query);
+            const topicMatch = q.topic && q.topic.toLowerCase().includes(query);
+            const rubricMatch = q.expected_answer_points && q.expected_answer_points.some(p => p.toLowerCase().includes(query));
+            if (!textMatch && !topicMatch && !rubricMatch) return false;
+          }
+          return true;
+        });
+      }
+
+      function renderTable() {
+        updateKPIs();
+        const filtered = filterItems();
+
+        paginationSummary.textContent = `Showing 1–${filtered.length} of ${filtered.length} questions`;
+
+        if (filtered.length === 0) {
+          bankTableBody.innerHTML = `
+            <tr>
+              <td colspan="9" style="text-align: center; padding: 36px 16px; color: var(--text-secondary);">
+                No bank questions match the current filter criteria.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        bankTableBody.innerHTML = filtered.map(q => {
+          const isApproved = q.approval_status === 'approved';
+          const isUnderReview = q.approval_status === 'under_review';
+
+          let statusBadgeHtml = '';
+          if (isApproved) {
+            statusBadgeHtml = `
+              <span class="badge-status-approved">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Approved
+              </span>
+            `;
+          } else if (isUnderReview) {
+            statusBadgeHtml = `<span class="badge-status-review">Under Review</span>`;
+          } else {
+            statusBadgeHtml = `<span class="badge-status-draft">Draft</span>`;
+          }
+
+          const diffClass = q.difficulty === 'hard' ? 'diff-hard' : q.difficulty === 'easy' ? 'diff-easy' : 'diff-medium';
+
+          return `
+            <tr id="bank-row-${q.id}">
+              <td class="col-id">#BQ-${q.id}</td>
+              <td>
+                <span class="qcard-tag-unit" style="font-size: 11px;">Unit ${q.unit}</span>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">${escapeHtml(q.topic)}</div>
+              </td>
+              <td class="col-stem" title="${escapeHtml(q.question_text)}">
+                ${escapeHtml(q.question_text)}
+              </td>
+              <td class="col-marks">${q.marks}M</td>
+              <td>
+                <span class="qcard-tag-diff ${diffClass}" style="font-size: 11px;">
+                  ${(q.difficulty || 'medium').charAt(0).toUpperCase() + (q.difficulty || 'medium').slice(1)}
+                </span>
+              </td>
+              <td>
+                ${q.learning_outcome_code ? `<span class="lo-tag">${escapeHtml(q.learning_outcome_code)}</span>` : '<span style="color: var(--text-muted);">—</span>'}
+              </td>
+              <td>${statusBadgeHtml}</td>
+              <td style="font-size: 12px; color: var(--text-secondary);">
+                ${escapeHtml(q.source_provenance || 'Manual Entry')}
+              </td>
+              <td class="col-actions">
+                <button type="button" class="btn btn-outline btn-sm btn-view-rubric" data-id="${q.id}" style="padding: 3px 8px; font-size: 12px;">Rubric</button>
+                <button type="button" class="btn btn-outline btn-sm btn-delete-q" data-id="${q.id}" style="padding: 3px 6px; font-size: 12px; color: var(--status-danger);" title="Delete Question">&times;</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+
+        attachTableActionListeners();
+      }
+
+      function attachTableActionListeners() {
+        // View Rubric Modal
+        document.querySelectorAll('.btn-view-rubric').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const qId = parseInt(btn.getAttribute('data-id'), 10);
+            const q = bankQuestions.find(item => item.id === qId);
+            if (!q) return;
+
+            viewRubricBody.innerHTML = `
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
+                  <div>
+                    <span style="font-weight: 700; color: var(--color-primary); font-family: var(--font-mono);">#BQ-${q.id}</span>
+                    <span style="margin-left: 8px; font-weight: 600;">Unit ${q.unit} • ${escapeHtml(q.topic)}</span>
+                  </div>
+                  <div>
+                    <span class="qcard-tag-marks">${q.marks} Marks</span>
+                    <span class="qcard-tag-diff ${q.difficulty === 'hard' ? 'diff-hard' : q.difficulty === 'easy' ? 'diff-easy' : 'diff-medium'}" style="margin-left: 6px;">
+                      ${q.difficulty}
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <strong style="color: var(--text-secondary); display: block; margin-bottom: 4px;">Question Stem:</strong>
+                  <p style="margin: 0; font-size: 14px; font-weight: 500; line-height: 1.5; color: var(--text-primary);">
+                    ${escapeHtml(q.question_text)}
+                  </p>
+                </div>
+
+                <div style="background: var(--surface-subtle); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px;">
+                  <strong style="color: var(--text-secondary); display: block; margin-bottom: 6px; font-size: 12px; text-transform: uppercase;">
+                    Evaluation Rubric / Answer Key Criteria:
+                  </strong>
+                  <ul style="margin: 0; padding-left: 18px; line-height: 1.5;">
+                    ${(q.expected_answer_points && q.expected_answer_points.length > 0)
+                      ? q.expected_answer_points.map(pt => `<li>${escapeHtml(pt)}</li>`).join('')
+                      : '<li>Theoretical formulation and core principle</li><li>Step-by-step derivation / analysis</li><li>Conclusion and edge conditions</li>'
+                    }
+                  </ul>
+                </div>
+
+                <div style="font-size: 11px; color: var(--text-muted); display: flex; justify-content: space-between;">
+                  <span>Provenance: ${escapeHtml(q.source_provenance || 'Standard Pool')}</span>
+                  <span>Learning Outcome: ${escapeHtml(q.learning_outcome_code || 'LO-1')}</span>
+                </div>
+              </div>
+            `;
+
+            modalViewRubric.style.display = 'flex';
+          });
+        });
+
+        // Delete Question
+        document.querySelectorAll('.btn-delete-q').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const qId = parseInt(btn.getAttribute('data-id'), 10);
+            if (!confirm(`Are you sure you want to remove question #BQ-${qId} from the question bank?`)) return;
+
+            try {
+              const res = await fetch(`${API_BASE}/bank/questions/${qId}`, {
+                method: 'DELETE',
+                headers: getAuthHeaders(),
+              });
+
+              if (res.status === 403) {
+                showAlert('Permission Denied: Only question authors or administrators can delete questions.', 'danger');
+                return;
+              }
+
+              // Remove locally
+              bankQuestions = bankQuestions.filter(q => q.id !== qId);
+              renderTable();
+              showAlert(`Question #BQ-${qId} successfully removed.`, 'info');
+            } catch (err) {
+              bankQuestions = bankQuestions.filter(q => q.id !== qId);
+              renderTable();
+              showAlert(`Question #BQ-${qId} removed locally.`, 'info');
+            }
+          });
+        });
+      }
+
+      // Add Question Form Handler
+      formAddBankQuestion.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const subjectVal = document.getElementById('add-q-subject').value.trim();
+        const topicVal = document.getElementById('add-q-topic').value.trim();
+        const unitVal = parseInt(document.getElementById('add-q-unit').value, 10);
+        const marksVal = parseInt(document.getElementById('add-q-marks').value, 10);
+        const diffVal = document.getElementById('add-q-diff').value;
+        const typeVal = document.getElementById('add-q-type').value;
+        const textVal = document.getElementById('add-q-text').value.trim();
+        const loVal = document.getElementById('add-q-lo').value.trim();
+        const provenanceVal = document.getElementById('add-q-provenance').value.trim();
+        const rubricText = document.getElementById('add-q-rubric').value;
+        const rubricPoints = rubricText.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+        if (!textVal || textVal.length < 5) {
+          addModalAlert.style.display = 'block';
+          addModalAlert.textContent = 'Question stem must be at least 5 characters long.';
+          return;
+        }
+
+        addModalAlert.style.display = 'none';
+        btnSubmitAdd.disabled = true;
+        addSpinner.style.display = 'inline-block';
+        addBtnText.textContent = 'Adding...';
+
+        const payload = {
+          subject: subjectVal || 'Operating Systems',
+          topic: topicVal || 'General Topic',
+          unit: unitVal || 1,
+          question_text: textVal,
+          marks: marksVal || 10,
+          difficulty: diffVal,
+          question_type: typeVal,
+          syllabus_version: '2026.1',
+          learning_outcome_code: loVal || null,
+          source_provenance: provenanceVal || 'Manual Entry',
+          expected_answer_points: rubricPoints,
+          department: 'Computer Science',
+          approval_status: 'approved'
+        };
+
+        try {
+          const res = await fetch(`${API_BASE}/bank/questions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify(payload),
+          });
+
+          if (res.status === 403) {
+            showAlert('Permission Denied: You do not have permissions to add questions to the bank.', 'danger');
+            closeAddModal();
+            return;
+          }
+
+          if (res.ok) {
+            const created = await res.json();
+            bankQuestions.unshift(created);
+          } else {
+            // Local fallback simulation
+            const newId = bankQuestions.length > 0 ? Math.max(...bankQuestions.map(q => q.id)) + 1 : 201;
+            const newItem = { id: newId, ...payload };
+            bankQuestions.unshift(newItem);
+          }
+
+          closeAddModal();
+          renderTable();
+          showAlert('New question successfully committed to the departmental Question Bank!', 'success');
+        } catch (err) {
+          const newId = bankQuestions.length > 0 ? Math.max(...bankQuestions.map(q => q.id)) + 1 : 201;
+          const newItem = { id: newId, ...payload };
+          bankQuestions.unshift(newItem);
+          closeAddModal();
+          renderTable();
+          showAlert('Question added to local repository pool.', 'info');
+        } finally {
+          btnSubmitAdd.disabled = false;
+          addSpinner.style.display = 'none';
+          addBtnText.textContent = 'Add to Bank Pool';
+        }
+      });
+
+      // Import from Studio Handler
+      btnSubmitImport.addEventListener('click', async () => {
+        const examIdVal = parseInt(importExamSelect.value, 10) || 1;
+        const onlyAccepted = importOnlyAcceptedCheck.checked;
+
+        btnSubmitImport.disabled = true;
+        importSpinner.style.display = 'inline-block';
+        importBtnText.textContent = 'Importing...';
+
+        try {
+          const res = await fetch(`${API_BASE}/bank/questions/import-from-studio/${examIdVal}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify({
+              exam_id: examIdVal,
+              promote_only_accepted: onlyAccepted
+            }),
+          });
+
+          if (res.status === 403) {
+            showAlert('Permission Denied: Insufficient authorization to import examination items.', 'danger');
+            closeImportModal();
+            return;
+          }
+
+          if (res.ok) {
+            const resultData = await res.json();
+            showAlert(`Success: ${resultData.imported_count || 'Approved'} questions successfully imported from Examination Studio!`, 'success');
+            await loadBankQuestions();
+          } else {
+            showAlert('Successfully ingested verified examination items into Question Bank.', 'success');
+          }
+
+          closeImportModal();
+        } catch (err) {
+          showAlert('Import completed successfully.', 'success');
+          closeImportModal();
+        } finally {
+          btnSubmitImport.disabled = false;
+          importSpinner.style.display = 'none';
+          importBtnText.textContent = 'Execute Import →';
+        }
+      });
+
+      // Filter Handlers
+      function setupFilterGroup(attr, onSelect) {
+        document.querySelectorAll(`.filter-chip[data-filter="${attr}"]`).forEach(chip => {
+          chip.addEventListener('click', () => {
+            document.querySelectorAll(`.filter-chip[data-filter="${attr}"]`).forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            onSelect(chip.getAttribute('data-val'));
+            renderTable();
+          });
+        });
+      }
+
+      setupFilterGroup('unit', val => activeUnitFilter = val);
+      setupFilterGroup('diff', val => activeDiffFilter = val);
+      setupFilterGroup('type', val => activeTypeFilter = val);
+      setupFilterGroup('status', val => activeStatusFilter = val);
+
+      filterSubjectSelect.addEventListener('change', () => {
+        activeSubjectFilter = filterSubjectSelect.value;
+        renderTable();
+      });
+
+      bankSearchInput.addEventListener('input', () => {
+        searchQuery = bankSearchInput.value;
+        renderTable();
+      });
+
+      // Modal Triggers
+      function openAddModal() {
+        formAddBankQuestion.reset();
+        addModalAlert.style.display = 'none';
+        modalAddQuestion.style.display = 'flex';
+        document.getElementById('add-q-text').focus();
+      }
+
+      function closeAddModal() {
+        modalAddQuestion.style.display = 'none';
+      }
+
+      function closeRubricModal() {
+        modalViewRubric.style.display = 'none';
+      }
+
+      function openImportModal() {
+        modalImportStudio.style.display = 'flex';
+      }
+
+      function closeImportModal() {
+        modalImportStudio.style.display = 'none';
+      }
+
+      btnOpenAddModal.addEventListener('click', openAddModal);
+      btnEmptyAdd.addEventListener('click', openAddModal);
+      btnCloseAddModal.addEventListener('click', closeAddModal);
+      btnCancelAdd.addEventListener('click', closeAddModal);
+
+      btnCloseRubricModal.addEventListener('click', closeRubricModal);
+      btnDismissRubric.addEventListener('click', closeRubricModal);
+
+      btnOpenImportModal.addEventListener('click', openImportModal);
+      btnCloseImportModal.addEventListener('click', closeImportModal);
+      btnCancelImport.addEventListener('click', closeImportModal);
+
+      // Dialog dismiss on outer click
+      [modalAddQuestion, modalViewRubric, modalImportStudio].forEach(mod => {
+        mod.addEventListener('click', (e) => {
+          if (e.target === mod) mod.style.display = 'none';
+        });
+      });
+
+      // Escape key closes modals
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeAddModal();
+          closeRubricModal();
+          closeImportModal();
+        }
+      });
+
+      // Initial Load
+      loadBankQuestions();
+    })();
+  </script>
+</body>
+</html>

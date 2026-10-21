@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Examination Portal — ExamOS</title>
+  <meta name="description" content="Secure student examination interface with time-lock enforcement, real-time autosave, forensic watermarking, and candidate response locking.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body class="dashboard-page">
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+  <!-- Dynamic Security Watermark Overlay -->
+  <div class="exam-watermark-overlay" id="exam-watermark-overlay" aria-hidden="true"></div>
+
+  <!-- Institutional Global Header (Matches Approved Reference Interface) -->
+  <header class="student-exam-header" role="banner">
+    <div class="container student-exam-header-inner">
+      <div class="student-exam-meta-group">
+        <a href="index.html" class="brand-logo" aria-label="ExamOS Home">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+          </svg>
+          <span>ExamOS</span>
+        </a>
+
+        <div class="student-pill" id="candidate-pill" title="Authenticated Candidate">
+          <span class="live-indicator-dot" aria-hidden="true"></span>
+          <span>Candidate: <strong id="candidate-name-display">Rohan Verma</strong> | Roll <span id="candidate-roll-display">#1042</span></span>
+        </div>
+
+        <div class="exam-title-badge" id="exam-title-badge">
+          <span id="exam-course-title">CS-401 Advanced Algorithms</span>
+        </div>
+      </div>
+
+      <div class="student-exam-status-group">
+        <!-- High Contrast Countdown Timer Pill -->
+        <div class="timer-pill" id="timer-pill" role="timer" aria-live="polite" aria-atomic="true" title="Time remaining until automatic session submission">
+          <span id="timer-countdown">02:45:12</span>
+          <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted);">Remaining</span>
+        </div>
+
+        <!-- Real-Time Autosave Indicator -->
+        <div class="autosave-pill" id="autosave-pill" aria-live="polite" aria-atomic="true">
+          <span class="autosave-dot" id="autosave-dot" aria-hidden="true"></span>
+          <span id="autosave-status-text">Autosaved</span>
+        </div>
+
+        <!-- Exit / Sign Out Button -->
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-exit-exam" title="Exit portal session">
+          Exit Portal
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="dashboard-content-wrap" id="main-content" role="main">
+    <div class="container">
+
+      <!-- Dynamic Feedback Alert Banner -->
+      <div id="exam-alert" class="alert-box alert-info" style="display: none; margin-bottom: 20px;" role="alert" aria-live="assertive">
+        <span id="exam-alert-text"></span>
+      </div>
+
+      <!-- STATE 1: Loading State -->
+      <section id="state-loading" class="exam-workspace-card" style="text-align: center; padding: 48px 24px;" aria-label="Loading Examination State">
+        <div class="skeleton-line" style="width: 240px; height: 28px; margin: 0 auto 16px;"></div>
+        <div class="skeleton-line" style="width: 480px; height: 16px; margin: 0 auto 12px;"></div>
+        <div class="skeleton-line" style="width: 320px; height: 16px; margin: 0 auto 32px;"></div>
+        <p style="color: var(--text-muted); font-size: 14px;">
+          Initializing secure cryptographic handshake and verifying center eligibility...
+        </p>
+      </section>
+
+      <!-- STATE 2: Empty State (No Active Schedule) -->
+      <section id="state-empty" class="exam-workspace-card" style="display: none; text-align: center; padding: 48px 24px;" aria-label="No Scheduled Exams">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">No Active Examination Found</h2>
+        <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 20px;">
+          You do not currently have an active examination session registered for your student group and examination center.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <a href="index.html" class="btn btn-secondary btn-sm">Return Home</a>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-empty-retry">Retry Lookup</button>
+        </div>
+      </section>
+
+      <!-- STATE 3: Time-Lock / Early Access State (HTTP 425) -->
+      <section id="state-too-early" class="exam-workspace-card" style="display: none; text-align: center; padding: 48px 24px;" aria-label="Examination Time-Locked">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px;">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Examination Time-Lock Active</h2>
+        <p style="color: var(--text-secondary); max-width: 520px; margin: 0 auto 16px;" id="too-early-message">
+          Early access is cryptographically restricted by institutional policy. The paper release window opens strictly at the scheduled time.
+        </p>
+        <div class="timer-pill warning" style="margin: 0 auto 24px; font-size: 18px;" id="early-countdown-pill">
+          <span id="early-countdown-timer">00:00:00</span>
+          <span>Until Release</span>
+        </div>
+        <div>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-early-check-again">Re-verify Schedule Time</button>
+        </div>
+      </section>
+
+      <!-- STATE 4: Permission Denied State (HTTP 403) -->
+      <section id="state-permission-denied" class="exam-workspace-card" style="display: none; text-align: center; padding: 48px 24px;" aria-label="Permission Denied">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px;">
+          <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #991b1b; margin-bottom: 8px;">Access Denied — Institutional Authorization Error</h2>
+        <p style="color: var(--text-secondary); max-width: 540px; margin: 0 auto 20px;" id="permission-denied-reason">
+          You are not enrolled or registered in the eligible student group for this examination center, or paper approval status has been revoked.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-open-recover-modal">Recover Session with Token</button>
+          <a href="login.html" class="btn btn-primary btn-sm">Switch Account</a>
+        </div>
+      </section>
+
+      <!-- STATE 5: Session Expired / Timed Out State (HTTP 410) -->
+      <section id="state-expired" class="exam-workspace-card" style="display: none; text-align: center; padding: 48px 24px;" aria-label="Examination Session Expired">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">Examination Window Concluded</h2>
+        <p style="color: var(--text-secondary); max-width: 520px; margin: 0 auto 20px;">
+          The designated examination duration and grace period have expired. Candidate responses have been locked on the institutional server.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+          <a href="index.html" class="btn btn-primary btn-sm">Return to Examination Portal</a>
+        </div>
+      </section>
+
+      <!-- STATE 6: Submission Success State -->
+      <section id="state-submitted" class="exam-workspace-card" style="display: none; text-align: center; padding: 48px 24px;" aria-label="Submission Confirmed">
+        <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px;">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="9 12 11 14 15 10"></polyline>
+        </svg>
+        <h2 style="font-size: 1.35rem; font-weight: 700; color: #166534; margin-bottom: 8px;">Examination Successfully Submitted</h2>
+        <p style="color: var(--text-secondary); max-width: 520px; margin: 0 auto 16px;" id="submission-confirmation-msg">
+          Your candidate responses have been cryptographically stamped and locked into the institutional evaluation queue.
+        </p>
+        <div style="background: var(--surface-subtle); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 14px 20px; max-width: 440px; margin: 0 auto 24px; text-align: left; font-size: 13px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: var(--text-muted);">Session ID:</span>
+            <strong id="summary-session-id" style="font-family: var(--font-mono);">#--</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: var(--text-muted);">Submission Timestamp:</span>
+            <strong id="summary-submitted-at" style="font-family: var(--font-mono);">--</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: var(--text-muted);">Integrity Hash:</span>
+            <strong id="summary-forensic-hash" style="font-family: var(--font-mono);">--</strong>
+          </div>
+        </div>
+        <div>
+          <a href="index.html" class="btn btn-secondary btn-sm">Close and Return Home</a>
+        </div>
+      </section>
+
+      <!-- MAIN ACTIVE ASSESSMENT INTERFACE (Matches Approved Reference Image) -->
+      <div id="state-active-exam" class="exam-layout-container" style="display: none;">
+
+        <!-- Left / Center Column: Question Display & Answer Editor Pane -->
+        <div class="exam-workspace-card" role="region" aria-labelledby="question-title-heading">
+
+          <!-- Question Header Strip -->
+          <div class="exam-question-header">
+            <div>
+              <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin-bottom: 4px;" id="question-section-title">
+                Section 2: Dynamic Programming &amp; Sequence Optimization
+              </div>
+              <h1 class="exam-question-title" id="question-title-heading">
+                Question <span id="current-question-num">3</span> of <span id="total-questions-num">12</span>
+              </h1>
+            </div>
+
+            <div class="exam-marks-badge" id="question-marks-badge">
+              <span id="question-marks">10</span> Marks
+            </div>
+          </div>
+
+          <!-- Question Content Body -->
+          <div class="exam-question-text" id="question-prompt-text">
+            Implement an efficient algorithm to find the longest common subsequence (LCS) of two given strings, X and Y. Analyze its time complexity.
+          </div>
+
+          <!-- Code Snippet or Example Block -->
+          <div class="exam-code-snippet" id="question-code-block" aria-label="Question code example">X = "BACDB"
+Y = "BDCB"</div>
+
+          <!-- Candidate Response Area -->
+          <form id="candidate-answer-form" class="candidate-response-area" novalidate>
+            <label for="candidate-answer-input" class="form-label" style="font-weight: 600;">
+              Your Written Response / Algorithm Specification:
+            </label>
+            <textarea
+              id="candidate-answer-input"
+              class="candidate-textarea"
+              placeholder="To find the Longest Common Subsequence, we can use dynamic programming..."
+              aria-label="Candidate response textarea"
+              rows="10"
+              spellcheck="false"
+            ></textarea>
+
+            <div class="candidate-word-counter">
+              <span id="word-count-display">0 words</span>
+              <span style="margin: 0 6px;">&bull;</span>
+              <span id="char-count-display">0 chars</span>
+            </div>
+          </form>
+
+          <!-- Action Navigation Toolbar -->
+          <div class="exam-action-toolbar">
+            <button type="button" class="btn btn-secondary btn-sm" id="btn-prev-question" aria-label="Previous Question">
+              &larr; Previous
+            </button>
+
+            <div class="exam-action-group-right">
+              <button type="button" class="btn btn-flag btn-sm" id="btn-flag-review" aria-label="Mark Question for Review">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                  <line x1="4" y1="22" x2="4" y2="15"></line>
+                </svg>
+                <span id="flag-btn-text">Mark for Review</span>
+              </button>
+
+              <button type="button" class="btn btn-primary btn-sm" id="btn-next-question" aria-label="Save answer and advance to next question">
+                Save &amp; Next &rarr;
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Question Palette Matrix & Session Info Sidebar -->
+        <aside class="exam-sidebar-pane" aria-label="Examination Navigation and Integrity Information">
+
+          <!-- Question Palette Matrix Card -->
+          <div class="palette-card" role="region" aria-labelledby="palette-heading">
+            <h2 class="palette-heading" id="palette-heading">Question Palette</h2>
+
+            <!-- Palette Grid (1 to 12 Buttons matching Reference) -->
+            <div class="palette-grid" id="palette-grid" role="group" aria-label="Select Question by Number">
+              <!-- Rendered Dynamically by JS -->
+            </div>
+
+            <!-- Palette Status Legend -->
+            <div class="palette-legend" aria-label="Question Palette Color Legend">
+              <div class="legend-item">
+                <span class="legend-indicator answered" aria-hidden="true"></span>
+                <span>Answered</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-indicator unanswered" aria-hidden="true"></span>
+                <span>Unanswered</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-indicator flagged" aria-hidden="true"></span>
+                <span>Flagged for Review</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Candidate Session Info Box -->
+          <div class="session-info-card" role="region" aria-labelledby="session-info-heading">
+            <h3 class="session-info-heading" id="session-info-heading">Candidate Session Info</h3>
+
+            <div class="session-info-row">
+              <span>Start Time:</span>
+              <strong id="session-info-start-time">09:00 AM</strong>
+            </div>
+            <div class="session-info-row">
+              <span>IP Address:</span>
+              <strong id="session-info-ip">127.0.0.1</strong>
+            </div>
+            <div class="session-info-row">
+              <span>Exam Center:</span>
+              <strong id="session-info-center">HALL-A1</strong>
+            </div>
+            <div class="session-info-row" style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border-subtle);">
+              <span>Recovery Key:</span>
+              <button type="button" class="btn btn-ghost btn-xs" id="btn-copy-recovery" title="Copy recovery token" style="font-family: var(--font-mono); font-size: 11px;">
+                <span id="session-info-recovery-token">REC-KEY</span> (Copy)
+              </button>
+            </div>
+          </div>
+
+          <!-- Prominent Final Submit Button -->
+          <button type="button" class="btn-final-submit" id="btn-open-submit-modal" aria-label="Open Final Examination Submission Modal">
+            Final Submit
+          </button>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL 1: Final Submission Confirmation Dialog -->
+  <div id="modal-submit-exam" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="submit-modal-title" style="display: none;">
+    <div class="modal-card" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3 id="submit-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Confirm Final Examination Submission</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-submit-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+          Review your response status before locking your examination paper. Once submitted, answers cannot be modified.
+        </p>
+
+        <!-- Summary Grid -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; text-align: center;">
+          <div style="background: var(--status-success-bg); border: 1px solid #bbf7d0; padding: 12px; border-radius: var(--radius-sm);">
+            <div style="font-size: 20px; font-weight: 700; color: #166534;" id="modal-count-answered">0</div>
+            <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #15803d;">Answered</div>
+          </div>
+          <div style="background: var(--surface-subtle); border: 1px solid var(--border-subtle); padding: 12px; border-radius: var(--radius-sm);">
+            <div style="font-size: 20px; font-weight: 700; color: #475569;" id="modal-count-unanswered">0</div>
+            <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted);">Unanswered</div>
+          </div>
+          <div style="background: var(--status-warning-bg); border: 1px solid #fde68a; padding: 12px; border-radius: var(--radius-sm);">
+            <div style="font-size: 20px; font-weight: 700; color: #b45309;" id="modal-count-flagged">0</div>
+            <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: #b45309;">Flagged</div>
+          </div>
+        </div>
+
+        <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 12px 14px; border-radius: var(--radius-sm); font-size: 13px; color: #991b1b; margin-bottom: 16px;">
+          <strong>Warning:</strong> Locking is irreversible. Ensure all questions have been reviewed according to your satisfaction.
+        </div>
+
+        <label style="display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--text-primary); cursor: pointer;">
+          <input type="checkbox" id="chk-confirm-submit" style="margin-top: 3px;">
+          <span>I understand that this action is final and my responses will be permanently locked for grading.</span>
+        </label>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-submit">Return to Exam</button>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-confirm-final-submit" disabled>
+          Confirm &amp; Lock Submission
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Session Recovery Dialog -->
+  <div id="modal-recover-session" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="recover-modal-title" style="display: none;">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 id="recover-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Recover Interrupted Session</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-recover-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px;">
+          Enter the single-use emergency recovery token issued at the start of your examination. This restores all previously saved answers and remaining time.
+        </p>
+
+        <form id="form-recover-session" novalidate>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="recovery-token-input" class="form-label">Single-Use Recovery Token</label>
+            <input
+              type="text"
+              id="recovery-token-input"
+              class="form-input"
+              placeholder="Paste recovery token (e.g. REC-XXXX-XXXX)"
+              required
+              style="font-family: var(--font-mono);"
+            >
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="btn-submit-recovery">
+            Restore Examination Session
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script: Complete Student Examination Interface Vanilla JS Engine -->
+  <script src="js/student-exam.js"></script>
+</body>
+</html>

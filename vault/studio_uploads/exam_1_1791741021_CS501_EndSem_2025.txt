@@ -1,0 +1,2 @@
+Q1. Define race condition and mutual exclusion mechanisms (5 Marks).
+    Q2. Given allocation matrix, determine safe sequence using Banker's Algorithm (10 Marks).

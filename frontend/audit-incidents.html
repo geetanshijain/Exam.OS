@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audit Logs and Incident Response Console — ExamOS</title>
+  <meta name="description" content="Institutional audit trail inspection, tamper-evident hash ledger verification, automated anomaly detection, and incident response governance for ExamOS.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body class="dashboard-page">
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+  <!-- Institutional Global Header (Matches Approved Reference Design) -->
+  <header class="audit-header" role="banner">
+    <div class="audit-header-inner">
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <a href="index.html" class="brand-logo" aria-label="ExamOS Home" style="color: #ffffff;">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color: #38bdf8;">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+          </svg>
+          <span style="font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em;">ExamOS</span>
+        </a>
+
+        <!-- Breadcrumb Navigation -->
+        <nav class="admin-breadcrumb" aria-label="Breadcrumb">
+          <span>Security Governance</span>
+          <span class="admin-breadcrumb-sep" aria-hidden="true">/</span>
+          <span class="admin-breadcrumb-current">Audit Trails &amp; Incident Response</span>
+        </nav>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <!-- Security Officer Session Pill -->
+        <div class="admin-session-pill" id="audit-session-pill" title="Authenticated Security Governance Session">
+          <span class="live-indicator-dot" aria-hidden="true"></span>
+          <span id="audit-user-display">Security Officer (ID: #01) - Active</span>
+        </div>
+
+        <!-- Quick Navigation -->
+        <a href="admin-roles.html" class="btn btn-ghost btn-sm" id="btn-admin-nav" style="color: #cbd5e1; border-color: rgba(255,255,255,0.15);" title="Go to User Governance">
+          User Directory
+        </a>
+        <a href="scheduling.html" class="btn btn-ghost btn-sm" id="btn-schedules-nav" style="color: #cbd5e1; border-color: rgba(255,255,255,0.15);" title="Go to Scheduling">
+          Schedules
+        </a>
+
+        <!-- Sign Out Button -->
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-signout" style="color: #f87171; border-color: rgba(248,113,113,0.25);" title="Sign out of security session">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main id="main-content" class="dashboard-main" style="padding-top: 24px;">
+    <div class="container">
+
+      <!-- Page Title & Security Clearance Banner -->
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">
+            Audit Logs and Incident Response Console
+          </h1>
+          <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">
+            Immutable append-only access event ledger, cryptographic hash validation, automated threat detection, and forensic containment.
+          </p>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">
+          Security Clearance: <strong style="color: #991b1b;">RESTRICTED LEVEL-4 GOVERNANCE</strong>
+        </div>
+      </div>
+
+      <!-- Global Alert Box -->
+      <div id="audit-alert" class="alert-box alert-info" style="display: none; margin-bottom: 20px;" role="alert" aria-live="polite">
+        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span id="audit-alert-text">Alert message goes here</span>
+        <button type="button" class="alert-close-btn" id="audit-alert-close" aria-label="Dismiss alert">&times;</button>
+      </div>
+
+      <!-- 4-Card KPI Summary Strip (Matches Approved Reference Design) -->
+      <section class="admin-kpi-grid" aria-label="Audit &amp; Incident Metrics">
+        <!-- Card 1: Total Audit Events -->
+        <div class="admin-kpi-card">
+          <span class="admin-kpi-label">Total Audit Events</span>
+          <div class="admin-kpi-val">
+            <span id="kpi-total-audits">--</span> <span style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Recorded</span>
+          </div>
+          <span class="admin-kpi-sub" id="kpi-audits-sub">Append-Only Authenticated DB &bull; Clock Sync OK</span>
+        </div>
+
+        <!-- Card 2: Active Threat Alerts -->
+        <div class="admin-kpi-card">
+          <span class="admin-kpi-label">Active Threat Alerts</span>
+          <div class="admin-kpi-val">
+            <span id="kpi-alerts-count" style="color: #991b1b;">--</span> <span style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Unresolved</span>
+          </div>
+          <span class="admin-kpi-sub" id="kpi-alerts-sub">Honeytoken Interceptions &bull; Anomaly Flags</span>
+        </div>
+
+        <!-- Card 3: Open Security Incidents -->
+        <div class="admin-kpi-card">
+          <span class="admin-kpi-label">Open Security Incidents</span>
+          <div class="admin-kpi-val">
+            <span id="kpi-incidents-count" style="color: #b45309;">--</span> <span style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Active Case</span>
+          </div>
+          <span class="admin-kpi-sub" id="kpi-incidents-sub">Formal Breach Containment &bull; Chain of Custody</span>
+        </div>
+
+        <!-- Card 4: Tamper-Evident Ledger -->
+        <div class="admin-kpi-card">
+          <span class="admin-kpi-label">Tamper-Evident Ledger</span>
+          <div class="admin-kpi-val" style="color: #166534;">
+            <span id="kpi-ledger-health">100% Intact</span>
+          </div>
+          <span class="admin-kpi-sub" id="kpi-ledger-sub">Cryptographic SHA-256 Hash Ledger Verified</span>
+        </div>
+      </section>
+
+      <!-- STATE: Loading Skeleton -->
+      <div id="state-loading" class="admin-master-card" style="text-align: center; padding: 48px;" aria-label="Loading Audit Ledger">
+        <div class="skeleton-line" style="width: 280px; height: 24px; margin: 0 auto 16px;"></div>
+        <div class="skeleton-line" style="width: 520px; height: 16px; margin: 0 auto 12px;"></div>
+        <div class="skeleton-line" style="width: 360px; height: 16px; margin: 0 auto;"></div>
+        <p style="color: var(--text-muted); font-size: 13px; margin-top: 20px;">
+          Verifying security clearance and querying append-only audit ledger...
+        </p>
+      </div>
+
+      <!-- STATE: Permission Denied -->
+      <div id="state-permission-denied" class="admin-master-card" style="display: none; text-align: center; padding: 48px;" aria-label="Access Denied">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #991b1b; margin-bottom: 8px;">Access Denied — Security Clearance Required</h2>
+        <p style="color: var(--text-secondary); max-width: 520px; margin: 0 auto 20px;" id="permission-denied-message">
+          Your authenticated session lacks the <code>view_audits</code> or <code>manage_incidents</code> clearance required to access the Security Governance Console.
+        </p>
+        <a href="login.html" class="btn btn-primary btn-sm">Switch Account</a>
+      </div>
+
+      <!-- STATE: Server Error -->
+      <div id="state-server-error" class="admin-master-card" style="display: none; text-align: center; padding: 48px;" aria-label="Server Error">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #dc2626; margin-bottom: 8px;">Audit Node Unreachable</h2>
+        <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 20px;" id="server-error-message">
+          Unable to establish communication with the security audit engine. Please verify connectivity.
+        </p>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-retry-server">Retry Connection</button>
+      </div>
+
+      <!-- PRIMARY OPERATIONAL CONSOLE (Matches Approved Reference Mockup) -->
+      <div id="main-audit-console" style="display: none;">
+
+        <!-- Dual-Tab Navigation -->
+        <nav class="audit-tabs-nav" aria-label="Console Navigation Tabs">
+          <button type="button" class="audit-tab-btn active" id="tab-btn-ledger">
+            Immutable Audit Ledger
+          </button>
+          <button type="button" class="audit-tab-btn" id="tab-btn-incidents">
+            Incident Response &amp; Anomalies (<span id="tab-incidents-counter">--</span>)
+          </button>
+        </nav>
+
+        <!-- TAB 1: Immutable Audit Ledger View -->
+        <div id="view-audit-ledger" class="audit-layout-grid">
+
+          <!-- Left Column: Master Audit Table -->
+          <section class="admin-master-card" aria-labelledby="audit-table-heading">
+            <div class="admin-master-header">
+              <h2 class="admin-master-title" id="audit-table-heading">Immutable System Audit Trail</h2>
+
+              <!-- Filter Toolbar (Matches Approved Reference) -->
+              <div class="admin-toolbar">
+                <input
+                  type="search"
+                  id="search-audit-input"
+                  class="form-input"
+                  placeholder="Search action, metadata, IP..."
+                  style="max-width: 220px; font-size: 13px; padding: 6px 12px;"
+                  aria-label="Search audit events"
+                >
+
+                <select id="filter-audit-action" class="form-input" style="max-width: 150px; font-size: 13px; padding: 6px 10px;" aria-label="Filter by action">
+                  <option value="all">All Actions</option>
+                  <option value="VAULT_RELEASE">VAULT_RELEASE</option>
+                  <option value="HONEYTOKEN_TRIP">HONEYTOKEN_TRIP</option>
+                  <option value="USER_LOGIN">USER_LOGIN</option>
+                  <option value="USER_CREATED">USER_CREATED</option>
+                  <option value="SECURITY_INCIDENT_OPENED">INCIDENT_OPENED</option>
+                  <option value="SECURITY_ANOMALY_SCAN">ANOMALY_SCAN</option>
+                </select>
+
+                <select id="filter-audit-outcome" class="form-input" style="max-width: 140px; font-size: 13px; padding: 6px 10px;" aria-label="Filter by outcome">
+                  <option value="all">All Outcomes</option>
+                  <option value="SUCCESS">SUCCESS</option>
+                  <option value="FAILURE">FAILURE</option>
+                </select>
+
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-audits" title="Refresh audit log stream">
+                  Refresh
+                </button>
+
+                <!-- Export CSV Button -->
+                <button type="button" class="btn btn-primary btn-sm" id="btn-export-audit-csv" aria-label="Export Audit Trail to CSV">
+                  Export CSV
+                </button>
+              </div>
+            </div>
+
+            <!-- Audit Master Table -->
+            <div class="admin-table-container">
+              <table class="admin-table" aria-describedby="audit-table-heading">
+                <thead>
+                  <tr>
+                    <th scope="col">UTC Timestamps</th>
+                    <th scope="col">Actor</th>
+                    <th scope="col">Event Action</th>
+                    <th scope="col">Entity Targets</th>
+                    <th scope="col">Outcomes</th>
+                    <th scope="col">Client IPs</th>
+                    <th scope="col" style="text-align: right;">Detail</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-table-body">
+                  <!-- Dynamically Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Bar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 12px; color: var(--text-secondary);">
+              <span id="audit-pagination-info">Showing events...</span>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-audit-prev" disabled>Previous</button>
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-audit-next" disabled>Next</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Right Column: Active Incidents & Sentry Drawer (Matches Reference) -->
+          <aside class="sentry-drawer-card" aria-label="Active Incidents and Sentry Drawer">
+            <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0 0 16px 0; padding-bottom: 12px; border-bottom: 1px solid var(--border-subtle);">
+              Active Incidents &amp; Sentry Drawer
+            </h2>
+
+            <!-- Selected / Active Incident Box -->
+            <div id="sentry-drawer-content">
+              <!-- Dynamically populated by JS with Incident INC-202610-84AF21 -->
+            </div>
+          </aside>
+
+        </div>
+
+        <!-- TAB 2: Incident Response & Anomalies View -->
+        <div id="view-incident-response" style="display: none; flex-direction: column; gap: 24px;">
+
+          <!-- Sentry Scan & Drill Controls Bar -->
+          <div class="admin-master-card" style="padding: 16px 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; margin: 0; color: var(--text-primary);">Automated Threat Sentry &amp; Security Drills</h3>
+                <p style="font-size: 12px; color: var(--text-secondary); margin: 2px 0 0 0;">
+                  Execute heuristic scans for abnormal login spikes, honeytoken trips, or trigger synthetic leak drills.
+                </p>
+              </div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-scan-anomalies">
+                  Run Anomaly Scan
+                </button>
+                <button type="button" class="btn btn-warning btn-sm" id="btn-simulate-drill">
+                  Simulate Security Drill
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" id="btn-open-new-incident-modal">
+                  + Open Formal Incident
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Security Alerts Section -->
+          <section class="admin-master-card" aria-labelledby="alerts-heading">
+            <div class="admin-master-header">
+              <h3 class="admin-master-title" id="alerts-heading">Active Automated Threat Alerts</h3>
+              <div style="font-size: 12px; color: var(--text-muted);">
+                Heuristic pattern detections &bull; Automated honeypot alarms
+              </div>
+            </div>
+
+            <div class="admin-table-container">
+              <table class="admin-table" aria-describedby="alerts-heading">
+                <thead>
+                  <tr>
+                    <th scope="col">Severity</th>
+                    <th scope="col">Alert Description</th>
+                    <th scope="col">Detected Actor</th>
+                    <th scope="col">Timestamp</th>
+                    <th scope="col" style="text-align: right;">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="alerts-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Formal Incidents Board -->
+          <section class="admin-master-card" aria-labelledby="incidents-heading">
+            <div class="admin-master-header">
+              <h3 class="admin-master-title" id="incidents-heading">Formal Security Incident Registers</h3>
+              <div style="font-size: 12px; color: var(--text-muted);">
+                Chain of custody investigations &bull; Authorized containment closures
+              </div>
+            </div>
+
+            <div class="admin-table-container">
+              <table class="admin-table" aria-describedby="incidents-heading">
+                <thead>
+                  <tr>
+                    <th scope="col">Incident Code</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Severity</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Paper Ref</th>
+                    <th scope="col" style="text-align: right;">Investigation</th>
+                  </tr>
+                </thead>
+                <tbody id="incidents-table-body">
+                  <!-- Dynamically populated -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL 1: Open New Security Incident -->
+  <div id="modal-open-incident" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-inc-title" style="display: none;">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="modal-inc-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Open Formal Security Incident</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-inc-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="form-open-incident" novalidate>
+        <div class="modal-body">
+          <div id="inc-error-msg" class="alert-box alert-danger" style="display: none; margin-bottom: 14px; font-size: 12px;"></div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="inc-title" class="form-label">Incident Title *</label>
+            <input type="text" id="inc-title" class="form-input" placeholder="e.g. Unauthorized Decryption Attempt at Center Hall A1" required minlength="4">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="inc-severity" class="form-label">Severity Level *</label>
+              <select id="inc-severity" class="form-input" required>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium" selected>Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="inc-category" class="form-label">Category *</label>
+              <input type="text" id="inc-category" class="form-input" placeholder="e.g. Data Leak Prevention" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="inc-paper-code" class="form-label">Related Paper Code (Optional)</label>
+            <input type="text" id="inc-paper-code" class="form-input" placeholder="e.g. CS-401">
+          </div>
+
+          <div class="form-group">
+            <label for="inc-description" class="form-label">Initial Incident Description *</label>
+            <textarea id="inc-description" class="form-input" rows="3" placeholder="Provide factual initial observations..." required minlength="10"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-inc">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-incident">Create Incident Case</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Add Investigation Note -->
+  <div id="modal-add-note" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-note-title" style="display: none;">
+    <div class="modal-card" style="max-width: 460px;">
+      <div class="modal-header">
+        <h3 id="modal-note-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Append Investigation Note</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-note-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="form-add-note" novalidate>
+        <input type="hidden" id="note-incident-id">
+
+        <div class="modal-body">
+          <div id="note-error-msg" class="alert-box alert-danger" style="display: none; margin-bottom: 14px; font-size: 12px;"></div>
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">
+            Investigation notes are permanently committed to the immutable chain-of-custody ledger with author timestamp.
+          </p>
+          <div class="form-group">
+            <label for="note-text" class="form-label">Investigation Observation *</label>
+            <textarea id="note-text" class="form-input" rows="3" placeholder="Document specific forensic findings..." required minlength="4"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-note">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-note">Append Note</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Attach Evidence -->
+  <div id="modal-add-evidence" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-evidence-title" style="display: none;">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 id="modal-evidence-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Attach Evidentiary Proof</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-evidence-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="form-add-evidence" novalidate>
+        <input type="hidden" id="evidence-incident-id">
+
+        <div class="modal-body">
+          <div id="evidence-error-msg" class="alert-box alert-danger" style="display: none; margin-bottom: 14px; font-size: 12px;"></div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="evidence-type" class="form-label">Evidence Type *</label>
+              <select id="evidence-type" class="form-input" required>
+                <option value="AUDIT_LOG_REF">Audit Log ID / Corr</option>
+                <option value="IP_CAPTURE">IP Capture Header</option>
+                <option value="SHA256_HASH">Forensic Digest Hash</option>
+                <option value="NETWORK_PCAP">Network PCAP Dump</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="evidence-ref-id" class="form-label">Reference ID *</label>
+              <input type="text" id="evidence-ref-id" class="form-input" placeholder="e.g. 197.18.53.23" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="evidence-description" class="form-label">Technical Description *</label>
+            <input type="text" id="evidence-description" class="form-input" placeholder="e.g. Origin IP captured at reverse proxy" required>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-evidence">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-evidence">Attach Evidence</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Close Security Incident (Formal Closure) -->
+  <div id="modal-close-incident" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-close-inc-title" style="display: none;">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="modal-close-inc-title" style="font-size: 1.15rem; font-weight: 700; color: #166534; margin: 0;">Formal Incident Closure</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-close-inc-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="form-close-incident" novalidate>
+        <input type="hidden" id="close-incident-id">
+
+        <div class="modal-body">
+          <div id="close-inc-error-msg" class="alert-box alert-danger" style="display: none; margin-bottom: 14px; font-size: 12px;"></div>
+
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+            Closing an incident requires institutional authorization with verified root cause analysis and documented remediation steps.
+          </p>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="close-root-cause" class="form-label">Verified Root Cause *</label>
+            <textarea id="close-root-cause" class="form-input" rows="2" placeholder="e.g. Insider credential leakage or external port scan..." required minlength="5"></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="close-remediation" class="form-label">Remediation Steps Enacted *</label>
+            <textarea id="close-remediation" class="form-input" rows="2" placeholder="e.g. Keys rotated, rogue IP blacklisted, credentials revoked..." required minlength="5"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="close-approval-notes" class="form-label">Closure Approval Notes *</label>
+            <input type="text" id="close-approval-notes" class="form-input" placeholder="e.g. Approved by Controller Eleanor Vance" required minlength="3">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-close-inc">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-close-inc" style="background-color: #166534; border-color: #166534;">
+            Execute Authorized Closure
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 5: Resolve Security Alert -->
+  <div id="modal-resolve-alert" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-alert-res-title" style="display: none;">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="modal-alert-res-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Resolve Threat Alert</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-alert-res-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="form-resolve-alert" novalidate>
+        <input type="hidden" id="resolve-alert-id">
+
+        <div class="modal-body">
+          <div id="res-alert-error-msg" class="alert-box alert-danger" style="display: none; margin-bottom: 14px; font-size: 12px;"></div>
+          <div class="form-group">
+            <label for="alert-resolution-notes" class="form-label">Mandatory Investigation Remarks *</label>
+            <textarea id="alert-resolution-notes" class="form-input" rows="3" placeholder="State reason for resolution (e.g. False alarm during authorized load test)..." required minlength="4"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-alert-res">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-resolve-alert">Resolve Alert</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 6: View Audit Event JSON Metadata Detail -->
+  <div id="modal-audit-detail" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-detail-title" style="display: none;">
+    <div class="modal-card" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3 id="modal-detail-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Audit Event Forensic Payload</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-detail-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="margin-bottom: 12px; font-size: 13px;">
+          <strong id="detail-action-text" class="action-badge" style="font-size: 13px;">--</strong>
+          <span style="color: var(--text-muted); margin-left: 8px;" id="detail-timestamp-text">--</span>
+        </div>
+
+        <div style="background: #0f172a; color: #38bdf8; padding: 14px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 12px; max-height: 280px; overflow-y: auto;" id="detail-json-code">
+          <!-- JSON -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-dismiss-detail">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client-side Logic -->
+  <script src="js/audit-incidents.js"></script>
+</body>
+</html>

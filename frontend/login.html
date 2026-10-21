@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Institutional Sign In — ExamOS</title>
+  <meta name="description" content="Enter your university credentials to access the ExamOS secure examination management portal.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body>
+  <!-- Accessible Skip Link -->
+  <a href="#login-form" class="skip-to-main">Skip to login form</a>
+
+  <!-- Institutional Global Header (Matches Approved Reference) -->
+  <header class="site-header" role="banner">
+    <div class="container header-content">
+      <a href="index.html" class="brand-logo" aria-label="ExamOS Home">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+        </svg>
+        <span>ExamOS</span>
+      </a>
+
+      <div class="header-nav-right">
+        <a href="index.html#capabilities" class="header-link">About</a>
+        <a href="mailto:support@examos.edu" class="header-link">Support</a>
+        <span class="header-pipe" aria-hidden="true">|</span>
+        <div class="header-security-badge" title="Cryptographically Enforced Institutional Security Architecture">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <rect x="9" y="11" width="6" height="5" rx="1"/>
+            <path d="M10 11V9a2 2 0 1 1 4 0v2"/>
+          </svg>
+          <div style="display: flex; flex-direction: column; line-height: 1.1; font-size: 11px;">
+            <span style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;">Institutional</span>
+            <span style="color: var(--text-muted);">Security</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Login Main Content Landmark -->
+  <main class="auth-wrapper" id="main-content">
+    <div class="auth-card" role="region" aria-labelledby="login-heading">
+      <div class="auth-card-header">
+        <h1 id="login-heading" class="auth-card-title">Institutional Sign In</h1>
+        <p class="auth-card-subtitle">Enter your university credentials to access the examination portal</p>
+      </div>
+
+      <!-- Live Dynamic Alert Box (Validation / Error / Lockout / Success) -->
+      <div id="auth-alert" class="alert-box alert-danger" style="display: none; margin-bottom: 20px;" role="alert" aria-live="assertive">
+        <svg id="alert-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 1px;" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span id="auth-alert-text"></span>
+      </div>
+
+      <!-- Main Sign In Form -->
+      <form id="login-form" class="auth-form" novalidate>
+        <!-- Field 1: Username or Institutional Email -->
+        <div class="form-group">
+          <label for="username_or_email" class="form-label">Username or Institutional Email</label>
+          <input
+            type="text"
+            id="username_or_email"
+            name="username_or_email"
+            class="form-input"
+            placeholder="Username or Institutional Email"
+            required
+            autocomplete="username"
+            autofocus
+            aria-required="true"
+          >
+        </div>
+
+        <!-- Field 2: Password with Mask/Unmask Toggle -->
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <div class="input-password-wrap">
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-input"
+              placeholder="Password"
+              required
+              autocomplete="current-password"
+              aria-required="true"
+            >
+            <button
+              type="button"
+              class="password-toggle-btn"
+              id="toggle-password"
+              aria-label="Show password as plain text"
+              aria-controls="password"
+            >
+              <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Field 3: Conditional MFA Code for Privileged Personnel -->
+        <div class="form-group" id="mfa-form-group">
+          <label for="mfa_code" class="form-label" id="mfa-label">
+            Conditional multi-factor authentication (MFA) token code, for privileged personnel
+          </label>
+          <input
+            type="text"
+            id="mfa_code"
+            name="mfa_code"
+            class="form-input"
+            placeholder="MFA Token Code"
+            autocomplete="one-time-code"
+            aria-describedby="mfa-label"
+          >
+        </div>
+
+        <!-- Actions Row: Sign In Button & Recovery Link -->
+        <div class="auth-action-row">
+          <button type="submit" id="submit-btn" class="auth-btn-signin">
+            <span id="submit-spinner" class="spinner" style="display: none;" aria-hidden="true"></span>
+            <span id="submit-btn-text">Sign In</span>
+          </button>
+
+          <div class="auth-recovery-link-wrap">
+            <a href="password-reset.html" id="forgot-password-link" class="auth-link-recovery">
+              Forgot password?<br>Account Recovery
+            </a>
+          </div>
+        </div>
+      </form>
+
+      <!-- Bottom Card Security Notice Strip (Argon2id + Session Monitoring) -->
+      <div class="auth-security-notice" role="note">
+        <svg class="notice-lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <span>Protected by Argon2id cryptographic hashing, rate limiting, and server-side session monitoring</span>
+      </div>
+    </div>
+
+    <!-- Dev Environment Watermark Notice (Matches Approved Reference) -->
+    <div class="dev-banner-strip">
+      DEV ENVIRONMENT — SAMPLE DATA EXPLICITLY LABELLED
+    </div>
+
+    <!-- Collapsible Dev Credentials Quick-Select Helper -->
+    <details class="dev-credentials-panel" id="dev-credentials-drawer">
+      <summary>
+        <span>Test Credentials Quick-Fill (Argon2id Encrypted)</span>
+      </summary>
+      <div class="dev-roles-grid">
+        <button type="button" class="dev-role-btn" data-user="alex_setter" data-role="Question Setter">
+          <strong>Setter:</strong> alex_setter<br>
+          <span style="color: var(--text-muted);">Dept: Computer Science</span>
+        </button>
+        <button type="button" class="dev-role-btn" data-user="dr_hod" data-role="Head of Department">
+          <strong>HOD:</strong> dr_hod<br>
+          <span style="color: var(--text-muted);">Dept: Computer Science</span>
+        </button>
+        <button type="button" class="dev-role-btn" data-user="sam_controller" data-role="Exam Controller">
+          <strong>Controller:</strong> sam_controller<br>
+          <span style="color: var(--text-muted);">(Privileged / Vault Access)</span>
+        </button>
+        <button type="button" class="dev-role-btn" data-user="pat_printer" data-role="Authorized Printer">
+          <strong>Printer:</strong> pat_printer<br>
+          <span style="color: var(--text-muted);">(Center Custodian)</span>
+        </button>
+        <button type="button" class="dev-role-btn" data-user="rohan_student" data-role="Candidate Student">
+          <strong>Student:</strong> rohan_student<br>
+          <span style="color: var(--text-muted);">(Roll #6 / Active Exam)</span>
+        </button>
+      </div>
+      <p style="margin-top: 10px; font-size: 11px; color: var(--text-muted);">
+        Default development password: <code>password123</code>. Click any role button to populate credentials instantly.
+      </p>
+    </details>
+  </main>
+
+  <!-- Interactive Account Recovery Modal (Accessible Quick Recovery Without Leaving Page) -->
+  <div class="modal-overlay" id="recovery-modal" role="dialog" aria-modal="true" aria-labelledby="modal-recovery-title">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2 id="modal-recovery-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Account Recovery</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="close-recovery-modal" aria-label="Close recovery dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">
+          &times;
+        </button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-alert" class="alert-box alert-danger" style="display: none;" role="alert">
+          <span id="modal-alert-text"></span>
+        </div>
+
+        <!-- Step 1: Request Token -->
+        <form id="modal-request-form" class="auth-form" novalidate>
+          <p style="font-size: 13px; color: var(--text-secondary); margin: 0;">
+            Enter your registered institutional email address. If an active account matches, single-use recovery instructions will be dispatched.
+          </p>
+          <div class="form-group">
+            <label for="recovery-email" class="form-label">Registered Institutional Email</label>
+            <input
+              type="email"
+              id="recovery-email"
+              class="form-input"
+              placeholder="faculty@examos.edu"
+              required
+              autocomplete="email"
+            >
+          </div>
+          <button type="submit" id="btn-request-token" class="btn btn-primary btn-block">
+            <span id="request-token-text">Generate Recovery Token</span>
+          </button>
+        </form>
+
+        <!-- Step 2: Confirm Password Reset -->
+        <form id="modal-confirm-form" class="auth-form" style="display: none; border-top: 1px dashed var(--border-subtle); padding-top: 16px; margin-top: 8px;" novalidate>
+          <h3 style="font-size: 14px; margin-bottom: 4px;">Update Password with Recovery Token</h3>
+          <div class="form-group">
+            <label for="modal-reset-token" class="form-label">Single-Use Recovery Token</label>
+            <input
+              type="text"
+              id="modal-reset-token"
+              class="form-input"
+              placeholder="Paste token received"
+              required
+            >
+          </div>
+          <div class="form-group">
+            <label for="modal-new-password" class="form-label">New Password (minimum 8 characters)</label>
+            <input
+              type="password"
+              id="modal-new-password"
+              class="form-input"
+              placeholder="Enter new strong password"
+              required
+              minlength="8"
+            >
+          </div>
+          <button type="submit" id="btn-confirm-reset" class="btn btn-primary btn-block">
+            <span id="confirm-reset-text">Reset Password &amp; Revoke Sessions</span>
+          </button>
+        </form>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <a href="password-reset.html" class="auth-link" style="font-size: 12px;">Open Full Recovery Page &rarr;</a>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-recovery">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ExamOS Sign In & Account Recovery Controller
+     * Built with Vanilla JavaScript. Adheres to strict zero-trust institutional specifications.
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      const API_BASE = window.location.port === '8000' ? '/api/v1' : 'http://127.0.0.1:8000/api/v1';
+
+      // DOM Elements - Login
+      const form = document.getElementById('login-form');
+      const usernameInput = document.getElementById('username_or_email');
+      const passwordInput = document.getElementById('password');
+      const mfaInput = document.getElementById('mfa_code');
+      const togglePasswordBtn = document.getElementById('toggle-password');
+      const submitBtn = document.getElementById('submit-btn');
+      const submitBtnText = document.getElementById('submit-btn-text');
+      const submitSpinner = document.getElementById('submit-spinner');
+      const alertBox = document.getElementById('auth-alert');
+      const alertText = document.getElementById('auth-alert-text');
+      const alertIcon = document.getElementById('alert-icon');
+      const mfaFormGroup = document.getElementById('mfa-form-group');
+
+      // Modal Elements - Recovery
+      const forgotPasswordLink = document.getElementById('forgot-password-link');
+      const recoveryModal = document.getElementById('recovery-modal');
+      const closeRecoveryBtn = document.getElementById('close-recovery-modal');
+      const cancelRecoveryBtn = document.getElementById('btn-cancel-recovery');
+      const modalAlert = document.getElementById('modal-alert');
+      const modalAlertText = document.getElementById('modal-alert-text');
+      const modalRequestForm = document.getElementById('modal-request-form');
+      const modalConfirmForm = document.getElementById('modal-confirm-form');
+      const recoveryEmailInput = document.getElementById('recovery-email');
+      const modalTokenInput = document.getElementById('modal-reset-token');
+      const modalNewPasswordInput = document.getElementById('modal-new-password');
+      const btnRequestToken = document.getElementById('btn-request-token');
+      const requestTokenText = document.getElementById('request-token-text');
+      const btnConfirmReset = document.getElementById('btn-confirm-reset');
+      const confirmResetText = document.getElementById('confirm-reset-text');
+
+      // Dev helper buttons
+      const devRoleButtons = document.querySelectorAll('.dev-role-btn');
+
+      let lockoutTimerInterval = null;
+
+      // =======================================================================
+      // 1. Password Visibility Toggle
+      // =======================================================================
+      togglePasswordBtn.addEventListener('click', () => {
+        const isPassword = passwordInput.getAttribute('type') === 'password';
+        passwordInput.setAttribute('type', isPassword ? 'text' : 'password');
+        togglePasswordBtn.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password as plain text');
+
+        // Toggle eye icon SVG
+        if (isPassword) {
+          togglePasswordBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+              <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+              <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+              <line x1="2" y1="2" x2="22" y2="22"/>
+            </svg>
+          `;
+        } else {
+          togglePasswordBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          `;
+        }
+      });
+
+      // =======================================================================
+      // 2. Alert & Feedback Banner
+      // =======================================================================
+      function showAlert(message, type = 'danger') {
+        alertText.textContent = message;
+        alertBox.className = `alert-box alert-${type}`;
+        alertBox.style.display = 'flex';
+        alertBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      function hideAlert() {
+        if (lockoutTimerInterval) {
+          clearInterval(lockoutTimerInterval);
+          lockoutTimerInterval = null;
+        }
+        alertBox.style.display = 'none';
+      }
+
+      // =======================================================================
+      // 3. Login Submission Handler
+      // =======================================================================
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideAlert();
+
+        const usernameOrEmail = usernameInput.value.trim();
+        const password = passwordInput.value;
+        const mfaCode = mfaInput.value.trim();
+
+        // Validation State: Check inputs
+        if (!usernameOrEmail) {
+          showAlert('Please enter your username or institutional email address.', 'danger');
+          usernameInput.focus();
+          return;
+        }
+        if (!password) {
+          showAlert('Please enter your password.', 'danger');
+          passwordInput.focus();
+          return;
+        }
+
+        // Loading State: disable controls, show spinner
+        submitBtn.disabled = true;
+        submitSpinner.style.display = 'inline-block';
+        submitBtnText.textContent = 'Verifying...';
+
+        try {
+          const res = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              username_or_email: usernameOrEmail,
+              password: password,
+              mfa_code: mfaCode || null,
+            }),
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            submitBtn.disabled = false;
+            submitSpinner.style.display = 'none';
+            submitBtnText.textContent = 'Sign In';
+
+            // Check for Account Lockout (HTTP 403)
+            if (res.status === 403 && data.detail && data.detail.includes('locked')) {
+              showAlert(data.detail, 'danger');
+              handleLockoutCountdown(data.detail);
+              return;
+            }
+
+            // Rate Limited (HTTP 429)
+            if (res.status === 429) {
+              showAlert(data.detail || 'Too many attempts. Rate limit enforced.', 'danger');
+              return;
+            }
+
+            // Generic Authentication Failure (HTTP 401)
+            showAlert(data.detail || 'Invalid username, email, or password.', 'danger');
+            return;
+          }
+
+          // Case A: Multi-Factor Authentication Challenge
+          if (data.mfa_required) {
+            submitBtn.disabled = false;
+            submitSpinner.style.display = 'none';
+            submitBtnText.textContent = 'Verify MFA & Sign In';
+
+            mfaInput.focus();
+            mfaInput.style.borderColor = 'var(--color-primary)';
+            mfaInput.style.boxShadow = '0 0 0 3px rgba(37, 99, 235, 0.2)';
+
+            showAlert('Multi-factor authentication code required. Please enter your 6-digit TOTP code or backup recovery key.', 'info');
+            return;
+          }
+
+          // Case B: Successful Authentication
+          if (data.access_token) {
+            localStorage.setItem('access_token', data.access_token);
+            if (data.csrf_token) {
+              sessionStorage.setItem('csrf_token', data.csrf_token);
+            }
+            if (data.user) {
+              localStorage.setItem('user_profile', JSON.stringify(data.user));
+            }
+
+            submitBtnText.textContent = 'Redirecting...';
+            showAlert('Authentication successful. Establishing secure session...', 'success');
+
+            const role = (data.user && data.user.role) ? data.user.role.toLowerCase() : '';
+            setTimeout(() => {
+              if (role === 'admin') {
+                window.location.href = 'admin-roles.html';
+              } else if (role === 'setter') {
+                window.location.href = 'setter.html';
+              } else if (role === 'controller' || role === 'hod') {
+                window.location.href = 'index.html'; // Or controller portal
+              } else if (role === 'printer') {
+                window.location.href = 'center-release.html';
+              } else if (role === 'student') {
+                window.location.href = 'student-exam.html';
+              } else {
+                window.location.href = 'index.html';
+              }
+            }, 800);
+          }
+        } catch (err) {
+          // Server Error / Offline State
+          submitBtn.disabled = false;
+          submitSpinner.style.display = 'none';
+          submitBtnText.textContent = 'Sign In';
+          showAlert('Institutional authentication node is unreachable. Please verify your connection.', 'danger');
+        }
+      });
+
+      // Handle Lockout Countdown Timer
+      function handleLockoutCountdown(detailMsg) {
+        const match = detailMsg.match(/in (\d+) minutes?/);
+        if (match && match[1]) {
+          let secondsLeft = parseInt(match[1], 10) * 60;
+          submitBtn.disabled = true;
+
+          lockoutTimerInterval = setInterval(() => {
+            secondsLeft -= 1;
+            if (secondsLeft <= 0) {
+              clearInterval(lockoutTimerInterval);
+              lockoutTimerInterval = null;
+              submitBtn.disabled = false;
+              showAlert('Lockout period has expired. You may attempt to sign in again.', 'info');
+            } else {
+              const m = Math.floor(secondsLeft / 60);
+              const s = secondsLeft % 60;
+              alertText.textContent = `Account temporarily locked due to repeated failed logins. Unlock in ${m}m ${s < 10 ? '0' : ''}${s}s.`;
+            }
+          }, 1000);
+        }
+      }
+
+      // =======================================================================
+      // 4. Dev Helper Quick-Fill
+      // =======================================================================
+      devRoleButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const username = btn.getAttribute('data-user');
+          usernameInput.value = username;
+          passwordInput.value = 'password123';
+          mfaInput.value = '';
+          hideAlert();
+          showAlert(`Filled credentials for ${btn.getAttribute('data-role')} (${username}). Click "Sign In" to authenticate.`, 'info');
+        });
+      });
+
+      // =======================================================================
+      // 5. Account Recovery Modal Dialog (Integrated Flow)
+      // =======================================================================
+      function showModalAlert(msg, type = 'danger') {
+        modalAlertText.textContent = msg;
+        modalAlert.className = `alert-box alert-${type}`;
+        modalAlert.style.display = 'flex';
+      }
+
+      function hideModalAlert() {
+        modalAlert.style.display = 'none';
+      }
+
+      // Open Modal
+      forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        hideModalAlert();
+        recoveryModal.classList.add('active');
+        recoveryEmailInput.value = usernameInput.value.includes('@') ? usernameInput.value : '';
+        recoveryEmailInput.focus();
+      });
+
+      // Close Modal
+      function closeModal() {
+        recoveryModal.classList.remove('active');
+        hideModalAlert();
+      }
+      closeRecoveryBtn.addEventListener('click', closeModal);
+      cancelRecoveryBtn.addEventListener('click', closeModal);
+      recoveryModal.addEventListener('click', (e) => {
+        if (e.target === recoveryModal) closeModal();
+      });
+
+      // Recovery Step 1: Request Token
+      modalRequestForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideModalAlert();
+        const email = recoveryEmailInput.value.trim();
+
+        if (!email) {
+          showModalAlert('Please enter your institutional email address.', 'danger');
+          return;
+        }
+
+        btnRequestToken.disabled = true;
+        requestTokenText.textContent = 'Generating Token...';
+
+        try {
+          const res = await fetch(`${API_BASE}/auth/password-reset/request`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ email }),
+          });
+          const data = await res.json();
+
+          btnRequestToken.disabled = false;
+          requestTokenText.textContent = 'Re-send Token';
+
+          showModalAlert(data.message || 'If an account exists, recovery instructions have been processed.', 'success');
+
+          // Check if development debug token was returned
+          const devTokenMatch = (data.message || '').match(/\[DEV_TOKEN:\s*([^\]]+)\]/);
+          if (devTokenMatch && devTokenMatch[1]) {
+            modalTokenInput.value = devTokenMatch[1].trim();
+          }
+
+          modalConfirmForm.style.display = 'flex';
+          modalNewPasswordInput.focus();
+        } catch (err) {
+          btnRequestToken.disabled = false;
+          requestTokenText.textContent = 'Generate Recovery Token';
+          showModalAlert('Unable to reach recovery service. Check network.', 'danger');
+        }
+      });
+
+      // Recovery Step 2: Confirm Reset
+      modalConfirmForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        hideModalAlert();
+        const token = modalTokenInput.value.trim();
+        const newPassword = modalNewPasswordInput.value;
+
+        if (!token) {
+          showModalAlert('Please paste the single-use recovery token.', 'danger');
+          return;
+        }
+        if (newPassword.length < 8) {
+          showModalAlert('New password must be at least 8 characters in length.', 'danger');
+          return;
+        }
+
+        btnConfirmReset.disabled = true;
+        confirmResetText.textContent = 'Updating Password...';
+
+        try {
+          const res = await fetch(`${API_BASE}/auth/password-reset/confirm`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ token, new_password: newPassword }),
+          });
+          const data = await res.json();
+
+          if (!res.ok) {
+            btnConfirmReset.disabled = false;
+            confirmResetText.textContent = 'Reset Password & Revoke Sessions';
+            showModalAlert(data.detail || 'Password recovery failed. Token may be expired or invalid.', 'danger');
+            return;
+          }
+
+          showModalAlert('Password successfully reset! Returning to sign in...', 'success');
+          setTimeout(() => {
+            closeModal();
+            usernameInput.value = recoveryEmailInput.value;
+            passwordInput.value = newPassword;
+            showAlert('Password reset successfully! Please sign in with your updated credentials.', 'success');
+            passwordInput.focus();
+          }, 1500);
+        } catch (err) {
+          btnConfirmReset.disabled = false;
+          confirmResetText.textContent = 'Reset Password & Revoke Sessions';
+          showModalAlert('Network error while resetting password.', 'danger');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

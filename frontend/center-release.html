@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Examination-Center Release Console — ExamOS</title>
+  <meta name="description" content="Authorized institutional examination-center release and extraction console with envelope decryption, time-lock windows, forensic watermarking, and honeytoken tripwires.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body class="dashboard-page">
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+  <!-- Institutional Global Header (Matches Approved Reference Design) -->
+  <header class="center-release-header" role="banner">
+    <div class="container center-release-header-inner">
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <a href="index.html" class="brand-logo" aria-label="ExamOS Home">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+          </svg>
+          <span>ExamOS</span>
+        </a>
+
+        <!-- Center Custodian Badge -->
+        <div class="center-badge-pill" id="center-custodian-pill" title="Designated Custodial Center">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          <span>Exam Center: <strong id="center-code-display">HALL-A1</strong> | Custodian: <span id="custodian-name-display">Pat Printer</span></span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <!-- Clock Sync & Hardware Status -->
+        <div class="sync-status-pill" id="sync-status-pill" title="Cryptographic Clock Synchronization Active">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>UTC Clock Synced | Hardware Audit OK</span>
+        </div>
+
+        <!-- Global Emergency Lock Directive Button -->
+        <button type="button" class="btn btn-emergency-cancel btn-sm" id="btn-emergency-lock-header" title="Issue emergency lock directive">
+          Emergency Lock
+        </button>
+
+        <!-- Verify Audit Ledger Button -->
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-verify-audit-header" title="Verify tamper-evident hash ledger">
+          Verify Audit Chain
+        </button>
+
+        <!-- Sign Out Button -->
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-signout" title="Sign out of custodian session">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Console Content Landmark -->
+  <main class="dashboard-content-wrap" id="main-content" role="main">
+    <div class="container">
+
+      <!-- Dynamic Alert Banner -->
+      <div id="release-alert" class="alert-box alert-info" style="display: none; margin-top: 16px;" role="alert" aria-live="assertive">
+        <span id="release-alert-text"></span>
+      </div>
+
+      <!-- Top Security KPI Metrics Strip (4 Cards Matching Reference Design) -->
+      <section class="release-kpi-grid" aria-label="Center Release Operational Metrics">
+        <!-- Card 1: Station Status -->
+        <div class="release-kpi-card">
+          <span class="release-kpi-label">Station Status</span>
+          <span class="release-kpi-val" id="kpi-station-status">Secure Node</span>
+          <span class="release-kpi-sub" id="kpi-station-sub">Station #P-04 Active • Terminal Audit OK</span>
+        </div>
+
+        <!-- Card 2: Extraction Window -->
+        <div class="release-kpi-card">
+          <span class="release-kpi-label">Extraction Window</span>
+          <span class="release-kpi-val" id="kpi-window-status">T-30 Min Active</span>
+          <span class="release-kpi-sub" id="kpi-window-sub">Strict Server System Clock Verification</span>
+        </div>
+
+        <!-- Card 3: Print Queue -->
+        <div class="release-kpi-card">
+          <span class="release-kpi-label">Print Queue</span>
+          <span class="release-kpi-val" id="kpi-queue-count">2 Scheduled</span>
+          <span class="release-kpi-sub" id="kpi-queue-sub">Authorized Center Allocations</span>
+        </div>
+
+        <!-- Card 4: Forensic Stamping -->
+        <div class="release-kpi-card">
+          <span class="release-kpi-label">Forensic Stamping</span>
+          <span class="release-kpi-val" id="kpi-stamping-status">100% Enforced</span>
+          <span class="release-kpi-sub" id="kpi-stamping-sub">Dynamic Recipient Watermark &amp; SHA-256</span>
+        </div>
+      </section>
+
+      <!-- STATE: Loading Skeleton -->
+      <div id="state-loading" class="release-master-card" style="text-align: center; padding: 40px;" aria-label="Loading Console Data">
+        <div class="skeleton-line" style="width: 280px; height: 24px; margin: 0 auto 16px;"></div>
+        <div class="skeleton-line" style="width: 520px; height: 16px; margin: 0 auto 12px;"></div>
+        <div class="skeleton-line" style="width: 360px; height: 16px; margin: 0 auto;"></div>
+        <p style="color: var(--text-muted); font-size: 13px; margin-top: 20px;">
+          Authenticating custodian session and loading encrypted vault envelope manifest...
+        </p>
+      </div>
+
+      <!-- STATE: Empty Records -->
+      <div id="state-empty" class="release-master-card" style="display: none; text-align: center; padding: 48px;" aria-label="No Scheduled Exams">
+        <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">No Examination Papers Allocated</h2>
+        <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 16px;">
+          There are currently no approved examination papers scheduled for extraction at this center.
+        </p>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-retry-manifest">Refresh Manifest</button>
+      </div>
+
+      <!-- STATE: Permission Denied -->
+      <div id="state-permission-denied" class="release-master-card" style="display: none; text-align: center; padding: 48px;" aria-label="Access Denied">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #991b1b; margin-bottom: 8px;">Access Denied — Custodian Role Required</h2>
+        <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 20px;" id="permission-denied-message">
+          Your authenticated role does not have authorization to extract or decrypt papers at this examination center.
+        </p>
+        <a href="login.html" class="btn btn-primary btn-sm">Switch Account</a>
+      </div>
+
+      <!-- 2-COLUMN PRIMARY CONSOLE LAYOUT (Matches Approved Reference Mockup) -->
+      <div class="release-layout-grid" id="main-console-grid" style="display: none;">
+
+        <!-- Left Column: Examination Release Master Table -->
+        <section class="release-master-card" aria-labelledby="release-master-heading">
+          <div class="release-master-header">
+            <h1 class="release-master-title" id="release-master-heading">Examination Release Master Table</h1>
+
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <input
+                type="search"
+                id="search-papers-input"
+                class="form-input"
+                placeholder="Search paper code or title..."
+                style="max-width: 240px; font-size: 13px; padding: 6px 12px;"
+                aria-label="Filter examination papers"
+              >
+              <select id="filter-status-select" class="form-input" style="max-width: 150px; font-size: 13px; padding: 6px 10px;" aria-label="Filter by paper status">
+                <option value="all">All Statuses</option>
+                <option value="open">Window Open</option>
+                <option value="locked">Time-Locked</option>
+                <option value="released">Released / Printed</option>
+              </select>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-table" title="Refresh paper status">
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <!-- Master Table -->
+          <div class="table-release-container">
+            <table class="table-release" aria-describedby="release-master-heading">
+              <thead>
+                <tr>
+                  <th scope="col">Paper Code</th>
+                  <th scope="col">Scheduled Time</th>
+                  <th scope="col">Time-Lock Status</th>
+                  <th scope="col">Quorum Status</th>
+                  <th scope="col" style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="release-table-body">
+                <!-- Dynamically Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Right Column: Extraction & Decryption Inspector Drawer -->
+        <aside class="inspector-panel" aria-label="Extraction &amp; Decryption Inspector">
+          <div class="inspector-card">
+            <h2 class="inspector-title" id="inspector-heading">Extraction &amp; Decryption Inspector</h2>
+
+            <!-- Selected Paper Summary -->
+            <div style="background: var(--surface-subtle); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 14px;">
+              <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 2px;">Selected Paper</div>
+              <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);" id="inspector-paper-title">CS-401 Advanced Algorithms</div>
+              <div style="font-size: 12px; color: var(--text-secondary); font-family: var(--font-mono); margin-top: 2px;" id="inspector-paper-code">CS-401</div>
+            </div>
+
+            <!-- Dynamic Watermark Metadata -->
+            <div class="inspector-meta-block">
+              <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--text-primary); letter-spacing: 0.04em;">
+                Dynamic Watermark Metadata
+              </div>
+              <div class="inspector-meta-item">
+                <span>Name of Recipient:</span>
+                <strong id="inspector-recipient">pat_printer@examos.com</strong>
+              </div>
+              <div class="inspector-meta-item">
+                <span>Station IP:</span>
+                <strong id="inspector-station-ip">127.0.0.1</strong>
+              </div>
+              <div class="inspector-meta-item">
+                <span>Watermark Date:</span>
+                <strong id="inspector-watermark-date">--</strong>
+              </div>
+              <div class="inspector-meta-item">
+                <span>Print Window:</span>
+                <strong id="inspector-print-window">T-30 Min Active</strong>
+              </div>
+              <div class="inspector-meta-item">
+                <span>Center Code:</span>
+                <strong id="inspector-center-code">HALL-A1</strong>
+              </div>
+            </div>
+
+            <!-- Envelope KMS Key Version -->
+            <div class="inspector-meta-block" style="border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+              <div class="inspector-meta-item">
+                <span>Status:</span>
+                <strong id="inspector-status-badge">Approved &amp; Locked</strong>
+              </div>
+              <div class="inspector-meta-item">
+                <span>Envelope KMS Key:</span>
+                <strong id="inspector-kms-version">KMS KEK v1</strong>
+              </div>
+              <div class="inspector-meta-item">
+                <span>Print History Count:</span>
+                <strong id="inspector-print-count">0 Prints logged</strong>
+              </div>
+            </div>
+
+            <!-- Honeytoken Trap Notice Box -->
+            <div class="honeytoken-notice-box" role="note">
+              <strong>Honeytoken Security Notice:</strong> Requests initiated outside authorized time windows strictly yield tracked decoy documents and alert the institutional controller dashboard.
+            </div>
+
+            <!-- Primary Trigger Action -->
+            <button type="button" class="btn-trigger-release" id="btn-inspector-trigger-release" aria-label="Trigger Secure Release and Print Paper">
+              Trigger Secure Release
+            </button>
+          </div>
+        </aside>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL 1: Audit Chain Verification Dialog -->
+  <div id="modal-audit-verification" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="audit-modal-title" style="display: none;">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3 id="audit-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Tamper-Evident Audit Chain Ledger</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-audit-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; background: var(--status-success-bg); border: 1px solid #bbf7d0; padding: 10px 14px; border-radius: var(--radius-sm);">
+          <div>
+            <strong style="color: #166534; font-size: 13px;">Hash Chain Verification:</strong>
+            <span style="font-size: 13px; color: #15803d;" id="audit-chain-status-text">Verified • Zero Tampering Detected</span>
+          </div>
+          <span class="badge badge-success" id="audit-chain-badge">100% Intact</span>
+        </div>
+
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+          Cryptographic sequential audit trail linking all KMS wrap, quorum approvals, and extraction attempts:
+        </p>
+
+        <div style="max-height: 260px; overflow-y: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 12px;">
+          <table style="width: 100%; border-collapse: collapse; text-align: left;">
+            <thead style="background: var(--surface-subtle); position: sticky; top: 0;">
+              <tr>
+                <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-subtle);">Seq #</th>
+                <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-subtle);">Action</th>
+                <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-subtle);">Actor</th>
+                <th style="padding: 8px 12px; border-bottom: 1px solid var(--border-subtle);">Hash (SHA-256)</th>
+              </tr>
+            </thead>
+            <tbody id="audit-entries-body">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-dismiss-audit-modal">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Emergency Lock Directive Dialog -->
+  <div id="modal-emergency-lock" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="lock-modal-title" style="display: none;">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 id="lock-modal-title" style="font-size: 1.15rem; font-weight: 700; color: #991b1b; margin: 0;">Engage Emergency Lock Directive</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-lock-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
+          Engaging an emergency lock immediately invalidates decryption keys and halts extraction at this center.
+        </p>
+
+        <form id="form-emergency-lock" novalidate>
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="lock-paper-select" class="form-label">Select Paper to Lock</label>
+            <select id="lock-paper-select" class="form-input" required>
+              <!-- Populated by JS -->
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label for="lock-reason-input" class="form-label">Reason for Emergency Lockdown</label>
+            <textarea
+              id="lock-reason-input"
+              class="form-input"
+              rows="3"
+              placeholder="e.g. Physical perimeter breach or station hardware tampering detected..."
+              required
+            ></textarea>
+          </div>
+
+          <button type="submit" class="btn btn-emergency-cancel btn-block" id="btn-submit-emergency-lock">
+            Confirm &amp; Engage Emergency Lock
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script: Center Release Console Vanilla JS Engine -->
+  <script src="js/center-release.js"></script>
+</body>
+</html>

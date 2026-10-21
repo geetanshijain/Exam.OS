@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin and Role Management Console — ExamOS</title>
+  <meta name="description" content="Institutional administrative governance console for user accounts, role-based access control (RBAC), credential policy, and tamper-evident audit logging in ExamOS.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body class="dashboard-page">
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+  <!-- Institutional Global Header (Matches Approved Reference Design) -->
+  <header class="admin-header" role="banner">
+    <div class="admin-header-inner">
+      <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <a href="index.html" class="brand-logo" aria-label="ExamOS Home" style="color: #ffffff;">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="color: #38bdf8;">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+          </svg>
+          <span style="font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em;">ExamOS</span>
+        </a>
+
+        <!-- Breadcrumb Navigation -->
+        <nav class="admin-breadcrumb" aria-label="Breadcrumb">
+          <span>System Administration</span>
+          <span class="admin-breadcrumb-sep" aria-hidden="true">/</span>
+          <span class="admin-breadcrumb-current">User &amp; Role Governance</span>
+        </nav>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <!-- Admin Session Pill -->
+        <div class="admin-session-pill" id="admin-session-pill" title="Authenticated Super Admin Session">
+          <span class="live-indicator-dot" aria-hidden="true"></span>
+          <span id="admin-user-display">Super Admin (ID: #01) - Active</span>
+        </div>
+
+        <!-- Quick Navigation -->
+        <a href="setter.html" class="btn btn-ghost btn-sm" id="btn-dashboard-nav" style="color: #cbd5e1; border-color: rgba(255,255,255,0.15);" title="Go to Setter Portal">
+          Dashboard
+        </a>
+        <a href="scheduling.html" class="btn btn-ghost btn-sm" id="btn-schedules-nav" style="color: #cbd5e1; border-color: rgba(255,255,255,0.15);" title="Go to Scheduling">
+          Schedules
+        </a>
+        <a href="audit-incidents.html" class="btn btn-ghost btn-sm" id="btn-audit-nav" style="color: #cbd5e1; border-color: rgba(255,255,255,0.15);" title="Go to Audit & Incidents">
+          Audit Logs
+        </a>
+
+        <!-- Sign Out Button -->
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-signout" style="color: #f87171; border-color: rgba(248,113,113,0.25);" title="Sign out of administrative session">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main id="main-content" class="dashboard-main" style="padding-top: 24px;">
+    <div class="container">
+
+      <!-- Page Title & Subtitle Banner -->
+      <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 20px; flex-wrap: wrap; gap: 8px;">
+        <div>
+          <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin: 0; letter-spacing: -0.02em;">
+            Admin and Role Management Console
+          </h1>
+          <p style="font-size: 13px; color: var(--text-secondary); margin: 4px 0 0 0;">
+            Institutional user provisioning, RBAC permission matrix enforcement, account security, and credential lifecycle governance.
+          </p>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); font-family: var(--font-mono);">
+          Security Clearance: <strong style="color: #0f172a;">TIER-1 MASTER ADMIN</strong>
+        </div>
+      </div>
+
+      <!-- Global Alert Box -->
+      <div id="admin-alert" class="alert-box alert-info" style="display: none; margin-bottom: 20px;" role="alert" aria-live="polite">
+        <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <span id="admin-alert-text">Alert message goes here</span>
+        <button type="button" class="alert-close-btn" id="admin-alert-close" aria-label="Dismiss alert">&times;</button>
+      </div>
+
+      <!-- 4-Card KPI Summary Strip (Matches Approved Reference Design) -->
+      <section class="admin-kpi-grid" aria-label="System Metrics &amp; Account Health">
+        <!-- Card 1: Total Directory Users -->
+        <div class="admin-kpi-card">
+          <span class="admin-kpi-label">Total Directory Users</span>
+          <div class="admin-kpi-val">
+            <span id="kpi-total-users">--</span>
+          </div>
+          <span class="admin-kpi-sub" id="kpi-users-sub">
+            <strong id="kpi-active-count" style="color: #166534;">--</strong> Active &bull; <strong id="kpi-locked-count" style="color: #991b1b;">--</strong> Locked
+          </span>
+        </div>
+
+        <!-- Card 2: Active System Roles -->
+        <div class="admin-kpi-card">
+          <span class="admin-kpi-label">Active System Roles</span>
+          <div class="admin-kpi-val">
+            <span id="kpi-roles-count">6</span> <span style="font-size: 14px; font-weight: 600; color: var(--text-muted);">Roles Enforced</span>
+          </div>
+          <span class="admin-kpi-sub" id="kpi-roles-sub">Strict RBAC Isolation &bull; Multi-Role Verification</span>
+        </div>
+
+        <!-- Card 3: Authentication Policy -->
+        <div class="admin-kpi-card">
+          <span class="admin-kpi-label">Authentication Policy</span>
+          <div class="admin-kpi-val" style="font-size: 18px; color: var(--text-primary);">
+            Argon2id + MFA Enforced
+          </div>
+          <span class="admin-kpi-sub" id="kpi-auth-sub">Zero Plaintext &bull; 5-Attempt Lockout Enforced</span>
+        </div>
+
+        <!-- Card 4: Audit Chain Health -->
+        <div class="admin-kpi-card">
+          <span class="admin-kpi-label">Audit Chain Health</span>
+          <div class="admin-kpi-val" style="color: #166534;">
+            <span id="kpi-audit-health">100% Intact</span>
+          </div>
+          <span class="admin-kpi-sub" id="kpi-audit-sub">Tamper-Evident SHA-256 Ledger Verified</span>
+        </div>
+      </section>
+
+      <!-- STATE: Loading Skeleton -->
+      <div id="state-loading" class="admin-master-card" style="text-align: center; padding: 48px;" aria-label="Loading Admin Directory">
+        <div class="skeleton-line" style="width: 280px; height: 24px; margin: 0 auto 16px;"></div>
+        <div class="skeleton-line" style="width: 520px; height: 16px; margin: 0 auto 12px;"></div>
+        <div class="skeleton-line" style="width: 360px; height: 16px; margin: 0 auto;"></div>
+        <p style="color: var(--text-muted); font-size: 13px; margin-top: 20px;">
+          Authenticating administrator session and retrieving institutional user directory...
+        </p>
+      </div>
+
+      <!-- STATE: Empty Records -->
+      <div id="state-empty" class="admin-master-card" style="display: none; text-align: center; padding: 48px;" aria-label="No Users Found">
+        <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary); margin-bottom: 8px;">No Users Match Current Filters</h2>
+        <p style="color: var(--text-secondary); max-width: 480px; margin: 0 auto 16px;">
+          No institutional user records correspond to the selected role or department filter criteria.
+        </p>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-reset-filters">Reset Filters</button>
+      </div>
+
+      <!-- STATE: Permission Denied -->
+      <div id="state-permission-denied" class="admin-master-card" style="display: none; text-align: center; padding: 48px;" aria-label="Access Denied">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #991b1b; margin-bottom: 8px;">Access Denied — Administrator Privilege Required</h2>
+        <p style="color: var(--text-secondary); max-width: 520px; margin: 0 auto 20px;" id="permission-denied-message">
+          Your authenticated session lacks the <code>manage_users</code> permission required to access the Administrative and Role Management Console.
+        </p>
+        <a href="login.html" class="btn btn-primary btn-sm">Switch Account</a>
+      </div>
+
+      <!-- STATE: Server Error -->
+      <div id="state-server-error" class="admin-master-card" style="display: none; text-align: center; padding: 48px;" aria-label="Server Error">
+        <h2 style="font-size: 1.25rem; font-weight: 700; color: #dc2626; margin-bottom: 8px;">Institutional Node Unreachable</h2>
+        <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 20px;" id="server-error-message">
+          Unable to establish communication with the backend security service. Please verify server connectivity.
+        </p>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-retry-server">Retry Connection</button>
+      </div>
+
+      <!-- 2-COLUMN PRIMARY LAYOUT (Matches Approved Reference Mockup) -->
+      <div class="admin-layout-grid" id="main-admin-grid" style="display: none;">
+
+        <!-- Left Column: User Directory Master Table -->
+        <section class="admin-master-card" aria-labelledby="directory-master-heading">
+          <div class="admin-master-header">
+            <h2 class="admin-master-title" id="directory-master-heading">User Directory Master Table</h2>
+
+            <!-- Search, Role Filter, and Provision Action Controls -->
+            <div class="admin-toolbar">
+              <input
+                type="search"
+                id="search-users-input"
+                class="form-input"
+                placeholder="Search name, email, or username..."
+                style="max-width: 240px; font-size: 13px; padding: 6px 12px;"
+                aria-label="Search user directory"
+              >
+
+              <select id="filter-role-select" class="form-input" style="max-width: 140px; font-size: 13px; padding: 6px 10px;" aria-label="Filter users by role">
+                <option value="all">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="controller">Controller</option>
+                <option value="hod">HOD</option>
+                <option value="setter">Setter</option>
+                <option value="printer">Printer</option>
+                <option value="student">Student</option>
+              </select>
+
+              <select id="filter-dept-select" class="form-input" style="max-width: 150px; font-size: 13px; padding: 6px 10px;" aria-label="Filter users by department">
+                <option value="all">All Departments</option>
+                <!-- Dynamically populated -->
+              </select>
+
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-users" title="Refresh directory data">
+                Refresh
+              </button>
+
+              <button type="button" class="btn btn-primary btn-sm" id="btn-open-provision-modal" aria-label="Provision New Institutional User">
+                + Provision User
+              </button>
+            </div>
+          </div>
+
+          <!-- Master Table -->
+          <div class="admin-table-container">
+            <table class="admin-table" aria-describedby="directory-master-heading">
+              <thead>
+                <tr>
+                  <th scope="col">User Name &amp; Email</th>
+                  <th scope="col">Department</th>
+                  <th scope="col">Assigned Role</th>
+                  <th scope="col">Account Status</th>
+                  <th scope="col" style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <!-- Dynamically Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Right Column: Role & Permission Matrix Inspector -->
+        <aside class="role-inspector-card" aria-label="Role and Permission Matrix Inspector">
+          <h2 class="role-inspector-title" id="matrix-heading">Role &amp; Permission Matrix Inspector</h2>
+
+          <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px;">
+            Institutional Role-Based Access Control (RBAC) boundaries enforced across all API endpoints:
+          </p>
+
+          <!-- Dynamic Role Accordion Container -->
+          <div id="roles-matrix-accordion" role="region" aria-label="Role Permissions Accordion">
+            <!-- Dynamically populated from GET /api/v1/admin/roles/permissions -->
+          </div>
+
+          <!-- Selected User Summary Inspector Drawer -->
+          <div class="user-inspector-box" id="user-inspector-panel">
+            <div class="user-inspector-box-title">Selected Account Details</div>
+            <div id="inspector-user-content">
+              <div style="font-size: 13px; color: var(--text-muted); font-style: italic; padding: 8px 0;">
+                Click any user row in the directory to inspect security parameters and credentials.
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- MODAL 1: Provision New User Dialog -->
+  <div id="modal-provision-user" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-prov-title" style="display: none;">
+    <div class="modal-card" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3 id="modal-prov-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Provision Institutional Account</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-prov-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="form-provision-user" novalidate>
+        <div class="modal-body">
+          <div id="prov-error-msg" class="alert-box alert-danger" style="display: none; margin-bottom: 14px; font-size: 12px;"></div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="prov-fullname" class="form-label">Full Name *</label>
+            <input type="text" id="prov-fullname" class="form-input" placeholder="e.g. Dr. Eleanor Vance" required minlength="2" maxlength="255">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="prov-username" class="form-label">Username *</label>
+              <input type="text" id="prov-username" class="form-input" placeholder="e.g. eleanor_vance" required minlength="3" maxlength="100">
+            </div>
+            <div class="form-group">
+              <label for="prov-email" class="form-label">Institutional Email *</label>
+              <input type="email" id="prov-email" class="form-input" placeholder="e.g. evance@examos.edu" required>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="prov-role" class="form-label">Assigned Role *</label>
+              <select id="prov-role" class="form-input" required>
+                <option value="setter">Setter (Examiner)</option>
+                <option value="hod">HOD (Department Head)</option>
+                <option value="controller">Controller of Exams</option>
+                <option value="printer">Printer (Center Custodian)</option>
+                <option value="student">Student (Candidate)</option>
+                <option value="admin">Administrator</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="prov-department" class="form-label">Department *</label>
+              <input type="text" id="prov-department" class="form-input" placeholder="e.g. Computer Science" required maxlength="100">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label for="prov-password" class="form-label">Initial Password * (Argon2id Enforced)</label>
+            <input type="password" id="prov-password" class="form-input" placeholder="Minimum 8 characters" required minlength="8">
+            <span style="font-size: 11px; color: var(--text-muted); margin-top: 3px; display: block;">
+              Hashed immediately with Argon2id prior to database persistence.
+            </span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+            <input type="checkbox" id="prov-active" checked style="width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer;">
+            <label for="prov-active" style="font-size: 13px; color: var(--text-primary); cursor: pointer; user-select: none;">
+              Account is Active immediately upon provisioning
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-prov">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-provision">Create Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Edit User & Role Assignment Dialog -->
+  <div id="modal-edit-user" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-edit-title" style="display: none;">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 id="modal-edit-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Edit User Account</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-edit-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="form-edit-user" novalidate>
+        <input type="hidden" id="edit-user-id">
+
+        <div class="modal-body">
+          <div id="edit-error-msg" class="alert-box alert-danger" style="display: none; margin-bottom: 14px; font-size: 12px;"></div>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="edit-fullname" class="form-label">Full Name</label>
+            <input type="text" id="edit-fullname" class="form-input" required minlength="2">
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+            <div class="form-group">
+              <label for="edit-role" class="form-label">Assigned Role</label>
+              <select id="edit-role" class="form-input">
+                <option value="setter">Setter</option>
+                <option value="hod">HOD</option>
+                <option value="controller">Controller</option>
+                <option value="printer">Printer</option>
+                <option value="student">Student</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="edit-department" class="form-label">Department</label>
+              <input type="text" id="edit-department" class="form-input" required>
+            </div>
+          </div>
+
+          <div style="margin-top: 14px; padding: 12px; background: var(--surface-subtle); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <input type="checkbox" id="edit-is-active" style="width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer;">
+              <label for="edit-is-active" style="font-size: 13px; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Account Active &amp; Operational
+              </label>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="edit-unlock-account" style="width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer;">
+              <label for="edit-unlock-account" style="font-size: 13px; color: var(--text-primary); cursor: pointer; user-select: none;">
+                Clear Failed Attempts &amp; Unlock Account Immediately
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-edit">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-edit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: Reset Password Dialog -->
+  <div id="modal-reset-password" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-reset-title" style="display: none;">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 id="modal-reset-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Reset Credentials</h3>
+        <button type="button" class="modal-close-btn" id="btn-close-reset-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="form-reset-password" novalidate>
+        <input type="hidden" id="reset-user-id">
+
+        <div class="modal-body">
+          <div id="reset-error-msg" class="alert-box alert-danger" style="display: none; margin-bottom: 14px; font-size: 12px;"></div>
+
+          <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 14px;">
+            Set a new temporary password for <strong id="reset-target-user-name">--</strong>. The user must use this credential on their next sign-in.
+          </p>
+
+          <div class="form-group" style="margin-bottom: 12px;">
+            <label for="reset-new-password" class="form-label">New Password *</label>
+            <input type="password" id="reset-new-password" class="form-input" placeholder="Minimum 8 characters" required minlength="8">
+          </div>
+
+          <div class="form-group">
+            <label for="reset-confirm-password" class="form-label">Confirm Password *</label>
+            <input type="password" id="reset-confirm-password" class="form-input" placeholder="Re-enter password" required minlength="8">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-reset">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-reset">Reset Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Client-side Logic -->
+  <script src="js/admin-roles.js"></script>
+</body>
+</html>

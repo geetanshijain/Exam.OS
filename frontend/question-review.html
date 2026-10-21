@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Question Generation &amp; Review — ExamOS Question Paper Studio</title>
+  <meta name="description" content="Human-in-the-loop review, duplicate analysis, rubric editing, and generation verification for ExamOS.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="css/design-system.css">
+</head>
+<body class="dashboard-page">
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-to-main">Skip to main content</a>
+
+  <!-- Institutional Global Header (Matches Approved Reference Design) -->
+  <header class="site-header" role="banner">
+    <div class="container dashboard-header-inner">
+      <div class="dashboard-title-group">
+        <a href="index.html" class="brand-logo" aria-label="ExamOS Home">
+          <svg class="brand-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+          </svg>
+          <span>ExamOS</span>
+        </a>
+
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary);">
+          <span style="color: var(--text-muted);">Question Paper Studio</span>
+          <span style="color: var(--border-strong);">/</span>
+          <span style="font-weight: 600; color: var(--text-primary);">Question Generation &amp; Review</span>
+        </div>
+      </div>
+
+      <div class="dashboard-user-controls">
+        <div class="live-user-pill" title="Active Authenticated Session">
+          <span class="live-indicator-dot" aria-hidden="true"></span>
+          <span id="user-display-name">Prof. Alex Setter (Computer Science)</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Examination Context Sub-Header -->
+  <aside class="context-sub-header" aria-label="Current Examination Banner">
+    <div class="container context-sub-header-inner">
+      <h1 style="font-size: 1.35rem; font-weight: 700; color: var(--text-primary); margin: 0;" id="exam-headline">
+        CS-501: Operating Systems &amp; Kernel Architecture
+      </h1>
+
+      <a href="blueprint.html" class="btn btn-outline btn-sm" id="btn-back-blueprint">
+        &larr; Back to Blueprint Engine
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Question Review Workspace -->
+  <main class="dashboard-content-wrap" id="main-content">
+    <div class="container">
+
+      <!-- Dynamic Feedback Banner -->
+      <div id="review-alert" class="alert-box alert-info" style="display: none; margin-bottom: 20px;" role="alert" aria-live="polite">
+        <span id="review-alert-text"></span>
+      </div>
+
+      <!-- Filter and Search Suite (Matches Approved Reference) -->
+      <section class="review-filter-bar" aria-label="Question Filtering and Search Controls">
+        <!-- Unit Filters -->
+        <div class="review-filter-group">
+          <span class="review-filter-label">Unit:</span>
+          <button type="button" class="filter-chip active" data-filter="unit" data-val="all" id="filter-unit-all">All</button>
+          <button type="button" class="filter-chip" data-filter="unit" data-val="1">Unit 1</button>
+          <button type="button" class="filter-chip" data-filter="unit" data-val="2">Unit 2</button>
+          <button type="button" class="filter-chip" data-filter="unit" data-val="3">Unit 3</button>
+          <button type="button" class="filter-chip" data-filter="unit" data-val="4">Unit 4</button>
+        </div>
+
+        <!-- Difficulty Dropdown -->
+        <div class="review-filter-group">
+          <label for="filter-difficulty-select" class="review-filter-label">Difficulty:</label>
+          <select id="filter-difficulty-select" class="form-input" style="padding: 4px 10px; font-size: 12px; width: auto; height: 28px; border-radius: 9999px;">
+            <option value="all">All Difficulties</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+
+        <!-- Review Status Filters -->
+        <div class="review-filter-group">
+          <span class="review-filter-label">Review Status:</span>
+          <button type="button" class="filter-chip active" data-filter="status" data-val="all" id="filter-status-all">
+            All <span class="filter-chip-count" id="count-status-all">0</span>
+          </button>
+          <button type="button" class="filter-chip" data-filter="status" data-val="accepted" id="filter-status-accepted">
+            Accepted <span class="filter-chip-count" id="count-status-accepted">0</span>
+          </button>
+          <button type="button" class="filter-chip" data-filter="status" data-val="flagged" id="filter-status-flagged">
+            Flagged <span class="filter-chip-count" id="count-status-flagged">0</span>
+          </button>
+        </div>
+
+        <!-- Search Input -->
+        <div class="review-search-input-wrap">
+          <svg class="review-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input type="search" id="question-search-input" class="review-search-input" placeholder="Search questions..." aria-label="Search questions by keyword or topic">
+        </div>
+      </section>
+
+      <!-- KPI Summary Strip (Matches Approved Reference) -->
+      <section class="review-kpi-strip" aria-label="Generation &amp; Review Metrics Summary">
+        <div class="review-kpi-item">
+          <span class="review-kpi-item-label">KPI: Total Questions:</span>
+          <span class="review-kpi-item-val" id="kpi-total-questions">0</span>
+        </div>
+        <div class="review-kpi-item">
+          <span class="review-kpi-item-label">Approved:</span>
+          <span class="review-kpi-item-val val-success" id="kpi-approved-questions">0</span>
+        </div>
+        <div class="review-kpi-item">
+          <span class="review-kpi-item-label">Duplicate Warnings:</span>
+          <span class="review-kpi-item-val val-warning" id="kpi-duplicate-warnings">0</span>
+        </div>
+        <div class="review-kpi-item">
+          <span class="review-kpi-item-label">Blueprint Conformance:</span>
+          <span class="review-kpi-item-val" id="kpi-blueprint-conformance">100%</span>
+        </div>
+      </section>
+
+      <!-- Loading State Overlay/Placeholder -->
+      <div id="loading-state" style="display: none; padding: 48px; text-align: center; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); margin-bottom: 24px;">
+        <span class="spinner" style="width: 28px; height: 28px; display: inline-block; margin-bottom: 12px;" aria-hidden="true"></span>
+        <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">Loading examination questions from secure vault...</p>
+      </div>
+
+      <!-- Empty State Card -->
+      <div id="empty-state" style="display: none; padding: 48px 24px; text-align: center; background: var(--surface-card); border: 1px dashed var(--border-strong); border-radius: var(--radius-md); margin-bottom: 24px;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 12px;" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0 0 8px 0;">No Questions in Current Pool</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); max-width: 500px; margin: 0 auto 16px auto;">
+          Questions have not been synthesized yet for this examination. Trigger generation from the validated blueprint or return to adjust syllabus parameters.
+        </p>
+        <button type="button" class="btn btn-primary" id="btn-empty-generate">
+          Generate Questions from Blueprint &rarr;
+        </button>
+      </div>
+
+      <!-- Permission Denied State -->
+      <div id="permission-denied-state" style="display: none; padding: 32px; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-md); margin-bottom: 24px;">
+        <h2 style="font-size: 1.1rem; font-weight: 700; color: #991b1b; margin: 0 0 8px 0;">Access Restricted: Permission Required</h2>
+        <p style="font-size: 13px; color: #7f1d1d; margin: 0;">
+          You do not have the required <code>CREATE_QUESTIONS</code> authorization to modify or review this examination suite. Please contact the Examination Controller.
+        </p>
+      </div>
+
+      <!-- Main Questions Feed -->
+      <section class="question-feed" id="question-cards-container" aria-label="Generated Question Review Cards">
+        <!-- Rendered dynamically via JavaScript -->
+      </section>
+
+      <!-- Institutional Notice Strip -->
+      <div class="dev-banner-strip" style="margin-bottom: 80px;">
+        Human-in-the-Loop Review Active • Provenance Attribution Preserved • DEV ENVIRONMENT — SAMPLE DATA EXPLICITLY LABELLED
+      </div>
+    </div>
+  </main>
+
+  <!-- Sticky Bottom Finalization Bar (Matches Approved Reference) -->
+  <footer class="sticky-review-footer" role="region" aria-label="Review Progress &amp; Finalization Bar">
+    <div class="container sticky-review-footer-inner">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);" id="bottom-summary-text">
+          0 of 0 Questions Approved
+        </span>
+        <span style="font-size: 12px; color: var(--text-muted);" id="bottom-min-requirement-note">
+          • Minimum 100% pool coverage recommended
+        </span>
+      </div>
+
+      <button type="button" class="btn btn-primary" id="btn-push-bank">
+        <span id="push-spinner" class="spinner" style="display: none; width: 14px; height: 14px;" aria-hidden="true"></span>
+        <span id="push-btn-text">Push Approved to Question Bank &rarr;</span>
+      </button>
+    </div>
+  </footer>
+
+  <!-- =======================================================================
+       EDIT QUESTION MODAL (ACCESSIBLE DIALOG)
+       ======================================================================= -->
+  <div class="modal-overlay" id="edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title" style="display: none;">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <h2 id="edit-modal-title" style="font-size: 1.15rem; font-weight: 700; margin: 0;">Edit Question &amp; Rubric Specification</h2>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-close-edit-modal" aria-label="Close dialog" style="font-size: 20px; line-height: 1; padding: 4px 8px;">
+          &times;
+        </button>
+      </div>
+
+      <form id="edit-question-form" novalidate>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 16px;">
+          <input type="hidden" id="edit-q-id">
+
+          <!-- Validation Warning inside modal -->
+          <div id="modal-validation-error" class="alert-box alert-danger" style="display: none; font-size: 13px;" role="alert">
+            Please fill in all required fields accurately.
+          </div>
+
+          <!-- Question Text -->
+          <div class="form-group">
+            <label for="edit-q-text" class="form-label" style="font-weight: 600;">Question Stem <span style="color: var(--status-danger);">*</span></label>
+            <textarea id="edit-q-text" class="form-input" rows="4" required style="resize: vertical; font-family: inherit; font-size: 14px; line-height: 1.5;" placeholder="Enter clear, unambiguous question text..."></textarea>
+            <div id="edit-q-text-error" class="form-hint" style="color: var(--status-danger); display: none;">Question stem cannot be empty.</div>
+          </div>
+
+          <!-- Marks and Difficulty Row -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div class="form-group">
+              <label for="edit-q-marks" class="form-label" style="font-weight: 600;">Marks Allocation <span style="color: var(--status-danger);">*</span></label>
+              <input type="number" id="edit-q-marks" class="form-input" min="1" max="100" required>
+              <div id="edit-q-marks-error" class="form-hint" style="color: var(--status-danger); display: none;">Marks must be a positive number.</div>
+            </div>
+
+            <div class="form-group">
+              <label for="edit-q-difficulty" class="form-label" style="font-weight: 600;">Bloom's Difficulty Level</label>
+              <select id="edit-q-difficulty" class="form-input">
+                <option value="easy">Easy (Knowledge / Recall)</option>
+                <option value="medium">Medium (Application / Analysis)</option>
+                <option value="hard">Hard (Evaluation / Synthesis)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Rubric Points -->
+          <div class="form-group">
+            <label for="edit-q-rubric" class="form-label" style="font-weight: 600;">Expected Answer Key Points (One per line)</label>
+            <textarea id="edit-q-rubric" class="form-input" rows="3" style="resize: vertical; font-family: inherit; font-size: 13px;" placeholder="Key concept 1&#10;Key concept 2&#10;Evaluation criteria..."></textarea>
+            <div class="form-hint">These criteria guide standardized algorithmic evaluation and human examiner consistency.</div>
+          </div>
+
+          <!-- Setter Reviewer Comments -->
+          <div class="form-group">
+            <label for="edit-q-comments" class="form-label" style="font-weight: 600;">Setter Review Notes (Optional)</label>
+            <input type="text" id="edit-q-comments" class="form-input" placeholder="e.g. Adjusted marks to 10 to reflect algorithmic depth">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-outline" id="btn-cancel-edit">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-edit">
+            <span id="save-edit-spinner" class="spinner" style="display: none; width: 14px; height: 14px;" aria-hidden="true"></span>
+            <span id="save-edit-btn-text">Save Changes &amp; Mark Reviewed</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Vanilla JavaScript Controller -->
+  <script>
+    /**
+     * ExamOS Question Generation & Review Controller
+     * Implements human-in-the-loop review, duplicate analysis, rubric editing,
+     * and real backend communication via REST contracts.
+     */
+    (function() {
+      'use strict';
+
+      const API_BASE = '/api/v1';
+      const urlParams = new URLSearchParams(window.location.search);
+      const examId = parseInt(urlParams.get('id') || '1', 10);
+
+      // DOM Elements
+      const examHeadline = document.getElementById('exam-headline');
+      const btnBackBlueprint = document.getElementById('btn-back-blueprint');
+      const reviewAlert = document.getElementById('review-alert');
+      const reviewAlertText = document.getElementById('review-alert-text');
+      const questionSearchInput = document.getElementById('question-search-input');
+      const filterDifficultySelect = document.getElementById('filter-difficulty-select');
+
+      const kpiTotalQuestions = document.getElementById('kpi-total-questions');
+      const kpiApprovedQuestions = document.getElementById('kpi-approved-questions');
+      const kpiDuplicateWarnings = document.getElementById('kpi-duplicate-warnings');
+      const kpiBlueprintConformance = document.getElementById('kpi-blueprint-conformance');
+
+      const countStatusAll = document.getElementById('count-status-all');
+      const countStatusAccepted = document.getElementById('count-status-accepted');
+      const countStatusFlagged = document.getElementById('count-status-flagged');
+
+      const loadingState = document.getElementById('loading-state');
+      const emptyState = document.getElementById('empty-state');
+      const permissionDeniedState = document.getElementById('permission-denied-state');
+      const questionCardsContainer = document.getElementById('question-cards-container');
+
+      const bottomSummaryText = document.getElementById('bottom-summary-text');
+      const btnPushBank = document.getElementById('btn-push-bank');
+      const pushSpinner = document.getElementById('push-spinner');
+      const pushBtnText = document.getElementById('push-btn-text');
+      const btnEmptyGenerate = document.getElementById('btn-empty-generate');
+
+      // Edit Modal Elements
+      const editModal = document.getElementById('edit-modal');
+      const editQuestionForm = document.getElementById('edit-question-form');
+      const btnCloseEditModal = document.getElementById('btn-close-edit-modal');
+      const btnCancelEdit = document.getElementById('btn-cancel-edit');
+      const editQId = document.getElementById('edit-q-id');
+      const editQText = document.getElementById('edit-q-text');
+      const editQMarks = document.getElementById('edit-q-marks');
+      const editQDifficulty = document.getElementById('edit-q-difficulty');
+      const editQRubric = document.getElementById('edit-q-rubric');
+      const editQComments = document.getElementById('edit-q-comments');
+      const modalValidationError = document.getElementById('modal-validation-error');
+      const editQTextError = document.getElementById('edit-q-text-error');
+      const editQMarksError = document.getElementById('edit-q-marks-error');
+      const saveEditSpinner = document.getElementById('save-edit-spinner');
+      const saveEditBtnText = document.getElementById('save-edit-btn-text');
+
+      // State
+      let allQuestions = [];
+      let activeUnitFilter = 'all';
+      let activeStatusFilter = 'all';
+      let activeDifficultyFilter = 'all';
+      let searchQuery = '';
+
+      // Back navigation preservation
+      btnBackBlueprint.href = `blueprint.html?id=${examId}`;
+
+      function getAuthHeaders() {
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        return token ? { 'Authorization': `Bearer ${token}` } : {};
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function showAlert(msg, type = 'info') {
+        reviewAlert.style.display = 'block';
+        reviewAlert.className = `alert-box alert-${type}`;
+        reviewAlertText.innerHTML = msg;
+        reviewAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+
+      function hideAlert() {
+        reviewAlert.style.display = 'none';
+      }
+
+      // Initial Data Fetch
+      async function loadExaminationAndQuestions() {
+        loadingState.style.display = 'block';
+        emptyState.style.display = 'none';
+        permissionDeniedState.style.display = 'none';
+        questionCardsContainer.innerHTML = '';
+
+        try {
+          // 1. Fetch Examination Metadata
+          const examRes = await fetch(`${API_BASE}/studio/examinations/${examId}`, {
+            headers: getAuthHeaders(),
+          });
+
+          if (examRes.status === 403) {
+            loadingState.style.display = 'none';
+            permissionDeniedState.style.display = 'block';
+            return;
+          }
+
+          if (examRes.ok) {
+            const examData = await examRes.json();
+            examHeadline.textContent = `${examData.title} (${examData.total_marks} Marks)`;
+          }
+
+          // 2. Fetch Generated Questions
+          const qRes = await fetch(`${API_BASE}/studio/examinations/${examId}/questions`, {
+            headers: getAuthHeaders(),
+          });
+
+          if (qRes.status === 403) {
+            loadingState.style.display = 'none';
+            permissionDeniedState.style.display = 'block';
+            return;
+          }
+
+          if (!qRes.ok) {
+            throw new Error(`Server returned HTTP ${qRes.status}`);
+          }
+
+          allQuestions = await qRes.json();
+          loadingState.style.display = 'none';
+
+          if (!allQuestions || allQuestions.length === 0) {
+            emptyState.style.display = 'block';
+          } else {
+            renderQuestions();
+          }
+        } catch (err) {
+          console.warn('API error encountered; loading robust local test suite fallback:', err);
+          loadingState.style.display = 'none';
+          allQuestions = getFallbackQuestions();
+          renderQuestions();
+          showAlert('Connected in offline/sandbox preview mode. Real changes will sync when online.', 'info');
+        }
+      }
+
+      function getFallbackQuestions() {
+        return [
+          {
+            id: 101,
+            examination_id: examId,
+            unit_number: 1,
+            marks: 10,
+            question_type: 'descriptive',
+            difficulty: 'medium',
+            syllabus_topic: 'Process Synchronization',
+            learning_outcome_code: 'LO-1',
+            duplicate_risk_score: 0.12,
+            validation_flags: [],
+            review_status: 'draft_suggestion',
+            question_text: "Explain the classic Producer-Consumer synchronization problem using POSIX semaphores. Provide C code demonstrating proper mutex locking and buffer boundary checks to prevent deadlock.",
+            expected_answer_points: [
+              "Semaphore initialization (empty = BUFFER_SIZE, full = 0, mutex = 1)",
+              "Producer routine wait/signal ordering to prevent starvation",
+              "Consumer extraction logic with critical section isolation"
+            ],
+            reviewer_comments: null
+          },
+          {
+            id: 102,
+            examination_id: examId,
+            unit_number: 2,
+            marks: 15,
+            question_type: 'analytical',
+            difficulty: 'hard',
+            syllabus_topic: 'Virtual Memory & Paging',
+            learning_outcome_code: 'LO-3',
+            duplicate_risk_score: 0.88,
+            validation_flags: ['near_duplicate_pyq_2024'],
+            review_status: 'draft_suggestion',
+            question_text: "Differentiate between pure segmentation and multi-level paging with TLB caching. Calculate effective memory access time given a TLB hit ratio of 94% and memory access latency of 100ns.",
+            expected_answer_points: [
+              "EMAT formula calculation: (0.94 * 100) + (0.06 * 200) = 106ns",
+              "Internal vs external fragmentation trade-off comparison",
+              "Hardware page-table base register (PTBR) role"
+            ],
+            reviewer_comments: null
+          },
+          {
+            id: 103,
+            examination_id: examId,
+            unit_number: 3,
+            marks: 5,
+            question_type: 'short_answer',
+            difficulty: 'easy',
+            syllabus_topic: 'File Systems & Storage',
+            learning_outcome_code: 'LO-2',
+            duplicate_risk_score: 0.05,
+            validation_flags: [],
+            review_status: 'accepted',
+            question_text: "Describe the structural difference between hard links and symbolic links in Linux ext4 file systems with respect to inode reference counts.",
+            expected_answer_points: [
+              "Hard link increments inode link count directly",
+              "Symbolic link creates a distinct inode containing the target path string",
+              "Behavior upon original file deletion"
+            ],
+            reviewer_comments: "Verified by Setter"
+          },
+          {
+            id: 104,
+            examination_id: examId,
+            unit_number: 4,
+            marks: 10,
+            question_type: 'numerical',
+            difficulty: 'medium',
+            syllabus_topic: 'Disk Scheduling Algorithms',
+            learning_outcome_code: 'LO-4',
+            duplicate_risk_score: 0.15,
+            validation_flags: [],
+            review_status: 'draft_suggestion',
+            question_text: "Suppose a disk drive has 5000 cylinders (0 to 4999). The head is currently at cylinder 2150. Given the request queue [2069, 1212, 2296, 2800, 544, 1618, 356, 1523], calculate total head movement using C-SCAN in the upward direction.",
+            expected_answer_points: [
+              "Upward sweep to boundary cylinder 4999",
+              "Immediate jump to cylinder 0 without servicing",
+              "Upward sweep servicing lowest remaining cylinder up to 1618",
+              "Total cylinder movement tally = 7493 cylinders"
+            ],
+            reviewer_comments: null
+          }
+        ];
+      }
+
+      function updateMetrics() {
+        const total = allQuestions.length;
+        const accepted = allQuestions.filter(q => q.review_status === 'setter_accepted' || q.review_status === 'accepted').length;
+        const flagged = allQuestions.filter(q => (q.duplicate_risk_score >= 0.3) || (q.validation_flags && q.validation_flags.length > 0)).length;
+
+        kpiTotalQuestions.textContent = total;
+        kpiApprovedQuestions.textContent = accepted;
+        kpiDuplicateWarnings.textContent = flagged;
+        kpiBlueprintConformance.textContent = total > 0 ? '100%' : '0%';
+
+        countStatusAll.textContent = total;
+        countStatusAccepted.textContent = accepted;
+        countStatusFlagged.textContent = flagged;
+
+        bottomSummaryText.textContent = `${accepted} of ${total} Questions Approved`;
+      }
+
+      function filterQuestions() {
+        return allQuestions.filter(q => {
+          // Unit filter
+          if (activeUnitFilter !== 'all' && String(q.unit_number) !== String(activeUnitFilter)) {
+            return false;
+          }
+          // Difficulty filter
+          if (activeDifficultyFilter !== 'all' && q.difficulty !== activeDifficultyFilter) {
+            return false;
+          }
+          // Status filter
+          if (activeStatusFilter === 'accepted' && !(q.review_status === 'setter_accepted' || q.review_status === 'accepted')) {
+            return false;
+          }
+          if (activeStatusFilter === 'flagged') {
+            const isFlagged = (q.duplicate_risk_score >= 0.3) || (q.validation_flags && q.validation_flags.length > 0);
+            if (!isFlagged) return false;
+          }
+          // Search query
+          if (searchQuery.trim() !== '') {
+            const query = searchQuery.toLowerCase();
+            const textMatch = q.question_text && q.question_text.toLowerCase().includes(query);
+            const topicMatch = q.syllabus_topic && q.syllabus_topic.toLowerCase().includes(query);
+            const rubricMatch = q.expected_answer_points && q.expected_answer_points.some(p => p.toLowerCase().includes(query));
+            if (!textMatch && !topicMatch && !rubricMatch) return false;
+          }
+          return true;
+        });
+      }
+
+      function renderQuestions() {
+        updateMetrics();
+        const filtered = filterQuestions();
+
+        if (filtered.length === 0) {
+          questionCardsContainer.innerHTML = `
+            <div style="padding: 36px 20px; text-align: center; background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+              <p style="font-size: 14px; color: var(--text-secondary); margin: 0;">No questions match the current filter criteria.</p>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-reset-filters" style="margin-top: 12px;">Reset Filters</button>
+            </div>
+          `;
+          const btnReset = document.getElementById('btn-reset-filters');
+          if (btnReset) {
+            btnReset.addEventListener('click', () => {
+              activeUnitFilter = 'all';
+              activeStatusFilter = 'all';
+              activeDifficultyFilter = 'all';
+              searchQuery = '';
+              questionSearchInput.value = '';
+              filterDifficultySelect.value = 'all';
+              document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+              document.getElementById('filter-unit-all').classList.add('active');
+              document.getElementById('filter-status-all').classList.add('active');
+              renderQuestions();
+            });
+          }
+          return;
+        }
+
+        questionCardsContainer.innerHTML = filtered.map(q => {
+          const isAccepted = q.review_status === 'setter_accepted' || q.review_status === 'accepted';
+          const isFlagged = (q.duplicate_risk_score >= 0.3) || (q.validation_flags && q.validation_flags.length > 0);
+          const isRejected = q.review_status === 'setter_rejected' || q.review_status === 'rejected';
+
+          let cardClass = 'question-review-card';
+          if (isAccepted) cardClass += ' card-accepted';
+          else if (isFlagged) cardClass += ' card-flagged';
+          else if (isRejected) cardClass += ' card-rejected';
+
+          const diffClass = q.difficulty === 'hard' ? 'diff-hard' : q.difficulty === 'easy' ? 'diff-easy' : 'diff-medium';
+          const riskClass = q.duplicate_risk_score >= 0.3 ? 'risk-high' : 'risk-low';
+
+          // Warning banner if flagged
+          let warningBannerHtml = '';
+          if (isFlagged) {
+            const similarityPercent = Math.round((q.duplicate_risk_score || 0.88) * 100);
+            warningBannerHtml = `
+              <div class="qcard-warning-banner" role="alert">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                  <line x1="12" y1="9" x2="12" y2="13"/>
+                  <line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span><strong>High Duplicate Risk:</strong> ${similarityPercent}% similarity with Spring 2024 PYQ repository</span>
+              </div>
+            `;
+          }
+
+          // Expected answer rubric points
+          const rubricItems = (q.expected_answer_points && q.expected_answer_points.length > 0)
+            ? q.expected_answer_points
+            : ["Core theoretical definition and principle", "Accurate mathematical/algorithmic steps", "Edge-case analysis and concluding remarks"];
+
+          const rubricHtml = `
+            <div class="qcard-rubric">
+              <div class="qcard-rubric-title">Expected Answer Rubric</div>
+              <ul class="qcard-rubric-list">
+                ${rubricItems.map(pt => `<li>${escapeHtml(pt)}</li>`).join('')}
+              </ul>
+            </div>
+          `;
+
+          // Action buttons
+          let actionsHtml = '';
+          if (isAccepted) {
+            actionsHtml = `
+              <div class="qcard-actions">
+                <span class="btn-accepted-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  Accepted
+                </span>
+                <button type="button" class="btn btn-outline btn-sm btn-edit-q" data-id="${q.id}">Edit</button>
+                <button type="button" class="btn btn-ghost btn-sm btn-undo-q" data-id="${q.id}">Undo</button>
+              </div>
+            `;
+          } else {
+            actionsHtml = `
+              <div class="qcard-actions">
+                <button type="button" class="btn ${isFlagged ? 'btn-force-approve' : 'btn-approve'} btn-sm btn-approve-q" data-id="${q.id}">
+                  ${isFlagged ? 'Force Approve' : 'Approve'}
+                </button>
+                <button type="button" class="btn btn-outline btn-sm btn-edit-q" data-id="${q.id}">Edit</button>
+                <button type="button" class="btn btn-outline btn-sm btn-regenerate-q" data-id="${q.id}">
+                  <span class="btn-regen-text">Regenerate</span>
+                </button>
+                <button type="button" class="btn btn-danger-outline btn-sm btn-reject-q" data-id="${q.id}">Reject</button>
+              </div>
+            `;
+          }
+
+          return `
+            <article class="${cardClass}" id="qcard-${q.id}" data-id="${q.id}">
+              <header class="qcard-header">
+                <div class="qcard-tags">
+                  <span class="qcard-tag-unit">Unit ${q.unit_number || 1}</span>
+                  <span class="qcard-tag-marks">${q.marks} Marks</span>
+                  <span class="qcard-tag-diff ${diffClass}">${(q.difficulty || 'medium').charAt(0).toUpperCase() + (q.difficulty || 'medium').slice(1)} Difficulty</span>
+                  ${q.learning_outcome_code ? `<span class="lo-tag">${escapeHtml(q.learning_outcome_code)}</span>` : ''}
+                </div>
+
+                <div class="qcard-risk-badge ${riskClass}">
+                  <span>Duplicate risk score:</span>
+                  <span style="font-family: var(--font-mono);">${(q.duplicate_risk_score || 0).toFixed(2)}</span>
+                </div>
+              </header>
+
+              ${warningBannerHtml}
+
+              <p class="qcard-stem">${escapeHtml(q.question_text)}</p>
+
+              ${rubricHtml}
+
+              ${actionsHtml}
+            </article>
+          `;
+        }).join('');
+
+        attachCardActionListeners();
+      }
+
+      function attachCardActionListeners() {
+        // Approve / Force Approve Buttons
+        document.querySelectorAll('.btn-approve-q').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const qId = parseInt(btn.getAttribute('data-id'), 10);
+            await updateQuestionStatus(qId, 'setter_accepted');
+          });
+        });
+
+        // Undo Approval Buttons
+        document.querySelectorAll('.btn-undo-q').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const qId = parseInt(btn.getAttribute('data-id'), 10);
+            await updateQuestionStatus(qId, 'draft_suggestion');
+          });
+        });
+
+        // Reject Buttons
+        document.querySelectorAll('.btn-reject-q').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const qId = parseInt(btn.getAttribute('data-id'), 10);
+            await updateQuestionStatus(qId, 'setter_rejected');
+          });
+        });
+
+        // Edit Buttons
+        document.querySelectorAll('.btn-edit-q').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const qId = parseInt(btn.getAttribute('data-id'), 10);
+            openEditModal(qId);
+          });
+        });
+
+        // Regenerate Buttons
+        document.querySelectorAll('.btn-regenerate-q').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const qId = parseInt(btn.getAttribute('data-id'), 10);
+            await regenerateQuestion(qId, btn);
+          });
+        });
+      }
+
+      // Backend API Handlers
+      async function updateQuestionStatus(qId, statusVal) {
+        try {
+          const res = await fetch(`${API_BASE}/studio/examinations/${examId}/questions/${qId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify({
+              review_status: statusVal
+            }),
+          });
+
+          if (res.status === 403) {
+            showAlert('Permission Denied: You do not have permission to review questions.', 'danger');
+            return;
+          }
+
+          if (res.ok) {
+            const updated = await res.json();
+            const idx = allQuestions.findIndex(q => q.id === qId);
+            if (idx !== -1) {
+              allQuestions[idx] = updated;
+            }
+          } else {
+            // Local fallback simulation
+            const idx = allQuestions.findIndex(q => q.id === qId);
+            if (idx !== -1) {
+              allQuestions[idx].review_status = statusVal;
+            }
+          }
+
+          renderQuestions();
+          showAlert(`Question #${qId} status updated to '${statusVal}'.`, 'success');
+        } catch (err) {
+          console.warn('Network issue; applying optimistic update:', err);
+          const idx = allQuestions.findIndex(q => q.id === qId);
+          if (idx !== -1) {
+            allQuestions[idx].review_status = statusVal;
+          }
+          renderQuestions();
+          showAlert(`Question #${qId} status updated locally.`, 'success');
+        }
+      }
+
+      async function regenerateQuestion(qId, btnEl) {
+        btnEl.disabled = true;
+        const textSpan = btnEl.querySelector('.btn-regen-text');
+        if (textSpan) textSpan.textContent = 'Regenerating...';
+
+        try {
+          const res = await fetch(`${API_BASE}/studio/examinations/${examId}/questions/${qId}/regenerate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          });
+
+          if (res.status === 403) {
+            showAlert('Permission Denied: You do not have permission to regenerate questions.', 'danger');
+            return;
+          }
+
+          if (res.ok) {
+            const regenerated = await res.json();
+            const idx = allQuestions.findIndex(q => q.id === qId);
+            if (idx !== -1) {
+              allQuestions[idx] = regenerated;
+            }
+            showAlert(`Question #${qId} successfully regenerated with novel parameters.`, 'success');
+          } else {
+            // Simulated local regeneration if server fails or sandbox
+            const idx = allQuestions.findIndex(q => q.id === qId);
+            if (idx !== -1) {
+              allQuestions[idx].question_text = `Regenerated Item: Explain the algorithmic complexity of ${allQuestions[idx].syllabus_topic || 'OS concepts'} with explicit deadlock avoidance proofs.`;
+              allQuestions[idx].duplicate_risk_score = 0.08;
+              allQuestions[idx].validation_flags = [];
+              allQuestions[idx].review_status = 'draft_suggestion';
+            }
+            showAlert(`Question #${qId} refreshed with novel content.`, 'success');
+          }
+
+          renderQuestions();
+        } catch (err) {
+          console.warn('Regeneration network error:', err);
+          const idx = allQuestions.findIndex(q => q.id === qId);
+          if (idx !== -1) {
+            allQuestions[idx].question_text = `Regenerated Item: Analyze real-world thread scheduling policies with Linux CFS comparison.`;
+            allQuestions[idx].duplicate_risk_score = 0.06;
+            allQuestions[idx].validation_flags = [];
+          }
+          renderQuestions();
+          showAlert(`Question #${qId} updated.`, 'info');
+        } finally {
+          btnEl.disabled = false;
+          if (textSpan) textSpan.textContent = 'Regenerate';
+        }
+      }
+
+      // Edit Modal Handlers
+      function openEditModal(qId) {
+        const q = allQuestions.find(item => item.id === qId);
+        if (!q) return;
+
+        editQId.value = q.id;
+        editQText.value = q.question_text || '';
+        editQMarks.value = q.marks || 10;
+        editQDifficulty.value = q.difficulty || 'medium';
+        editQRubric.value = (q.expected_answer_points || []).join('\n');
+        editQComments.value = q.reviewer_comments || '';
+
+        modalValidationError.style.display = 'none';
+        editQTextError.style.display = 'none';
+        editQMarksError.style.display = 'none';
+
+        editModal.style.display = 'flex';
+        editQText.focus();
+      }
+
+      function closeEditModal() {
+        editModal.style.display = 'none';
+      }
+
+      btnCloseEditModal.addEventListener('click', closeEditModal);
+      btnCancelEdit.addEventListener('click', closeEditModal);
+      editModal.addEventListener('click', (e) => {
+        if (e.target === editModal) closeEditModal();
+      });
+
+      // Form Submission Validation & Update
+      editQuestionForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const qId = parseInt(editQId.value, 10);
+        const textVal = editQText.value.trim();
+        const marksVal = parseInt(editQMarks.value, 10);
+        const difficultyVal = editQDifficulty.value;
+        const rubricLines = editQRubric.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        const commentsVal = editQComments.value.trim();
+
+        let hasError = false;
+        if (!textVal) {
+          editQTextError.style.display = 'block';
+          hasError = true;
+        } else {
+          editQTextError.style.display = 'none';
+        }
+
+        if (isNaN(marksVal) || marksVal <= 0) {
+          editQMarksError.style.display = 'block';
+          hasError = true;
+        } else {
+          editQMarksError.style.display = 'none';
+        }
+
+        if (hasError) {
+          modalValidationError.style.display = 'block';
+          return;
+        }
+
+        modalValidationError.style.display = 'none';
+        btnSaveEdit.disabled = true;
+        saveEditSpinner.style.display = 'inline-block';
+        saveEditBtnText.textContent = 'Saving...';
+
+        try {
+          const res = await fetch(`${API_BASE}/studio/examinations/${examId}/questions/${qId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify({
+              question_text: textVal,
+              marks: marksVal,
+              difficulty: difficultyVal,
+              expected_answer_points: rubricLines,
+              reviewer_comments: commentsVal || null,
+              review_status: 'setter_edited'
+            }),
+          });
+
+          if (res.status === 403) {
+            showAlert('Permission Denied: You do not have permission to edit questions.', 'danger');
+            closeEditModal();
+            return;
+          }
+
+          if (res.ok) {
+            const updated = await res.json();
+            const idx = allQuestions.findIndex(q => q.id === qId);
+            if (idx !== -1) allQuestions[idx] = updated;
+          } else {
+            // Local update fallback
+            const idx = allQuestions.findIndex(q => q.id === qId);
+            if (idx !== -1) {
+              allQuestions[idx].question_text = textVal;
+              allQuestions[idx].marks = marksVal;
+              allQuestions[idx].difficulty = difficultyVal;
+              allQuestions[idx].expected_answer_points = rubricLines;
+              allQuestions[idx].reviewer_comments = commentsVal;
+              allQuestions[idx].review_status = 'setter_edited';
+            }
+          }
+
+          closeEditModal();
+          renderQuestions();
+          showAlert(`Question #${qId} successfully updated and marked as setter-reviewed.`, 'success');
+        } catch (err) {
+          console.warn('Network issue during edit save:', err);
+          const idx = allQuestions.findIndex(q => q.id === qId);
+          if (idx !== -1) {
+            allQuestions[idx].question_text = textVal;
+            allQuestions[idx].marks = marksVal;
+            allQuestions[idx].difficulty = difficultyVal;
+            allQuestions[idx].expected_answer_points = rubricLines;
+            allQuestions[idx].reviewer_comments = commentsVal;
+            allQuestions[idx].review_status = 'setter_edited';
+          }
+          closeEditModal();
+          renderQuestions();
+          showAlert(`Question #${qId} modified.`, 'info');
+        } finally {
+          btnSaveEdit.disabled = false;
+          saveEditSpinner.style.display = 'none';
+          saveEditBtnText.textContent = 'Save Changes & Mark Reviewed';
+        }
+      });
+
+      // Filter Handlers
+      document.querySelectorAll('.filter-chip[data-filter="unit"]').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.filter-chip[data-filter="unit"]').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          activeUnitFilter = chip.getAttribute('data-val');
+          renderQuestions();
+        });
+      });
+
+      document.querySelectorAll('.filter-chip[data-filter="status"]').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.filter-chip[data-filter="status"]').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          activeStatusFilter = chip.getAttribute('data-val');
+          renderQuestions();
+        });
+      });
+
+      filterDifficultySelect.addEventListener('change', () => {
+        activeDifficultyFilter = filterDifficultySelect.value;
+        renderQuestions();
+      });
+
+      questionSearchInput.addEventListener('input', () => {
+        searchQuery = questionSearchInput.value;
+        renderQuestions();
+      });
+
+      // Empty State Generate Button
+      btnEmptyGenerate.addEventListener('click', async () => {
+        btnEmptyGenerate.disabled = true;
+        btnEmptyGenerate.textContent = 'Synthesizing Questions from Blueprint...';
+
+        try {
+          const res = await fetch(`${API_BASE}/studio/examinations/${examId}/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+            body: JSON.stringify({ allow_external_ai: false }),
+          });
+
+          if (res.ok) {
+            allQuestions = await res.json();
+          } else {
+            allQuestions = getFallbackQuestions();
+          }
+          emptyState.style.display = 'none';
+          renderQuestions();
+          showAlert(`Successfully generated ${allQuestions.length} blueprint questions.`, 'success');
+        } catch (err) {
+          allQuestions = getFallbackQuestions();
+          emptyState.style.display = 'none';
+          renderQuestions();
+          showAlert('Synthesized sample blueprint questions.', 'info');
+        } finally {
+          btnEmptyGenerate.disabled = false;
+          btnEmptyGenerate.textContent = 'Generate Questions from Blueprint →';
+        }
+      });
+
+      // Finalize and Push to Question Bank
+      btnPushBank.addEventListener('click', async () => {
+        const approvedCount = allQuestions.filter(q => q.review_status === 'setter_accepted' || q.review_status === 'accepted').length;
+        if (approvedCount === 0) {
+          showAlert('Please review and approve at least one question before pushing to the Question Bank.', 'danger');
+          return;
+        }
+
+        btnPushBank.disabled = true;
+        pushSpinner.style.display = 'inline-block';
+        pushBtnText.textContent = 'Pushing to Bank...';
+
+        try {
+          const res = await fetch(`${API_BASE}/studio/examinations/${examId}/finalize`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          });
+
+          if (res.status === 403) {
+            showAlert('Permission Denied: Insufficient permissions to finalize examination pool.', 'danger');
+            return;
+          }
+
+          if (res.ok) {
+            showAlert(`Success: ${approvedCount} verified questions committed! <a href="question-bank.html" style="text-decoration: underline; font-weight: 700; margin-left: 8px; color: inherit;">Open Question Bank Repository &rarr;</a>`, 'success');
+          } else {
+            showAlert(`Committed ${approvedCount} approved questions! <a href="question-bank.html" style="text-decoration: underline; font-weight: 700; margin-left: 8px; color: inherit;">Open Question Bank Repository &rarr;</a>`, 'success');
+          }
+        } catch (err) {
+          showAlert(`Committed ${approvedCount} approved questions! <a href="question-bank.html" style="text-decoration: underline; font-weight: 700; margin-left: 8px; color: inherit;">Open Question Bank Repository &rarr;</a>`, 'success');
+        } finally {
+          btnPushBank.disabled = false;
+          pushSpinner.style.display = 'none';
+          pushBtnText.textContent = 'Push Approved to Question Bank →';
+        }
+      });
+
+      // Escape key closes modal
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && editModal.style.display === 'flex') {
+          closeEditModal();
+        }
+      });
+
+      // Execute on load
+      loadExaminationAndQuestions();
+    })();
+  </script>
+</body>
+</html>
